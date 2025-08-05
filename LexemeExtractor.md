@@ -2,15 +2,15 @@
 
 ## Overview
 
-This tool processes source files to produce their lexemes. For a given input file `path/file`, the lexemes are written to `path/file.lexemes`.
+This tool processes compressed `.lexemes` files to produce human-readable lexeme information. For a given input file `path/file.lexemes`, the tool outputs the decompressed lexeme data in a readable format.
 
-## File Structure
+## Input File Structure
 
-Each `.lexemes` file contains:
+Each `.lexemes` input file contains:
 
-1. **Line 1**: Domain/dialect for the file
+1. **Line 1**: Domain/dialect for the original source file
 2. **Line 2**: Originating filename
-3. **Remaining lines**: Lexemes, one per line
+3. **Remaining lines**: Compressed lexemes, one per line
 
 ## Lexeme Format
 
@@ -37,9 +37,9 @@ Content varies by lexeme type as defined by the DMS lexical specification:
 
 **String Encoding**: Files are encoded as UTF-8 or Unicode. Most Unicode characters are represented directly. Escape sequences use `"` followed by hex character codes for special characters (newlines, quotes within strings, line-break Unicode characters).
 
-## Encoding Optimizations
+## Compression Format
 
-Entries are specially encoded to minimize file size.
+The lexeme entries use special encoding to minimize file size. LexemeExtractor must decode these compressed representations to produce readable output.
 
 ### Lexeme Number Encoding
 
@@ -149,9 +149,9 @@ content = ""                            (* no content *)
         ;
 ```
 
-## Example Output
+## Example Input
 
-The following shows a sample lexemes file. Note the frequent occurrence of `==` (same line/column), which happens because most lexemes start where the previous lexeme ended.
+The following shows a sample `.lexemes` input file that LexemeExtractor would process. Note the frequent occurrence of compressed position encodings like `===A` and `=A=E`.
 
 ```
 Java~~Java1_5
@@ -174,9 +174,17 @@ o===A
 ...
 ```
 
-### Explanation
+### Input Format Explanation
 
 - **Line 1**: `Java~~Java1_5` - Domain/dialect specification
-- **Line 2**: `/temp/ugly.java` - Source filename
-- **Line 3+**: Lexeme entries with compressed position encoding
-- **Common patterns**: `===A` (single character), `=A=E` (same line, different columns)
+- **Line 2**: `/temp/ugly.java` - Original source filename
+- **Line 3+**: Compressed lexeme entries that need to be decoded
+- **Compression patterns**: `===A` (single character), `=A=E` (same line, different columns)
+
+## Expected Output
+
+LexemeExtractor should decode this compressed format into human-readable information showing:
+- Lexeme type and number
+- Actual line and column positions (decoded from compressed format)
+- Lexeme content (strings, numbers, identifiers)
+- Clear formatting for easy analysis
