@@ -92,6 +92,10 @@ The application follows a simple, functional approach:
 4. **File Discovery**: Uses `Directory.GetFiles()` for pattern matching
 5. **File Processing**: Calls `ProcessFile()` method for each matching file
 
+## Documentation
+
+- **[LexemeExtractor.md](LexemeExtractor.md)**: Detailed specification of the lexeme file format and encoding
+
 ## Contributing
 
 This project uses C# coding standards:
