@@ -1,14 +1,14 @@
 # LexemeExtractor
 
-A modern .NET 9.0 console application that processes files matching glob patterns with support for Linux path conventions.
+A .NET 9.0 console application that processes files matching glob patterns with support for Linux path conventions.
 
 ## Features
 
 - **Glob Pattern Matching**: Process multiple files using standard glob patterns (e.g., `*.txt`, `*.cs`)
-- **Linux Path Support**: Full support for `~/` home directory expansion on Linux
-- **Modern C# 13**: Utilizes the latest language features including list patterns, switch expressions, and type inference
+- **Linux Path Support**: Support for `~/` home directory expansion on Linux
+- **C# 13 Language Features**: Uses list patterns, switch expressions, and type inference
 - **Cross-Platform**: Built for .NET 9.0 with Linux x64 runtime
-- **AOT Compilation**: Configured for Ahead-of-Time compilation for optimal performance
+- **AOT Compilation**: Configured for Ahead-of-Time compilation
 
 ## Usage
 
@@ -64,11 +64,11 @@ dotnet run --project LexemeExtractor -- "*.txt"
 
 ## Technical Details
 
-### Modern C# Features Used
+### C# Language Features Used
 
 - **List Pattern Matching**: For home directory expansion (`['~', '/', .. var rest]`)
 - **Switch Expressions**: For path processing and directory resolution
-- **Type Inference**: Extensive use of `var` for cleaner code
+- **Type Inference**: Use of `var` for type inference
 - **Expression-bodied Methods**: Concise method definitions
 - **Top-level Programs**: Simplified program structure
 
@@ -94,12 +94,12 @@ The application follows a simple, functional approach:
 
 ## Contributing
 
-This project uses modern C# coding standards:
+This project uses C# coding standards:
 
 - Type inference with `var` wherever possible
 - Nullable reference types enabled
-- Latest .NET 9.0 language features
-- Concise, functional-style code
+- .NET 9.0 language features
+- Functional-style code
 
 ## License
 
