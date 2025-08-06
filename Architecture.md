@@ -6,13 +6,6 @@
 LexemeExtractor/
 ├── Program.cs                          # Entry point with file globbing
 ├── LexemeExtractor.csproj             # Project configuration
-├── Grammar/
-│   ├── LexemeFormat.g4                # ANTLR grammar definition
-│   └── Generated/                     # ANTLR-generated parser files
-│       ├── LexemeFormatLexer.cs
-│       ├── LexemeFormatParser.cs
-│       ├── LexemeFormatBaseVisitor.cs
-│       └── LexemeFormatListener.cs
 ├── Models/
 │   ├── LexemeFile.cs                  # Represents complete .lexemes file
 │   ├── Lexeme.cs                      # Individual lexeme data
@@ -20,8 +13,7 @@ LexemeExtractor/
 │   ├── LexemeContent.cs               # Content variants (string, number, etc.)
 │   └── FileHeader.cs                  # Domain, filename, encoding info
 ├── Parsing/
-│   ├── LexemeFileParser.cs            # High-level parser interface
-│   ├── LexemeVisitor.cs               # ANTLR visitor implementation
+│   ├── LexemeFileParser.cs            # Regex-based parser implementation
 │   ├── PositionDecoder.cs             # Decodes compressed positions
 │   ├── ContentDecoder.cs              # Decodes lexeme content
 │   └── EncodingHelper.cs              # Radix36, column encoding utilities
@@ -30,8 +22,9 @@ LexemeExtractor/
 │   ├── ConsoleFormatter.cs            # Human-readable console output
 │   ├── JsonFormatter.cs               # JSON output format
 │   └── CsvFormatter.cs                # CSV output format
-└── Exceptions/
-    └── LexemeParseException.cs        # Custom parsing exceptions
+├── Exceptions/
+│   └── LexemeParseException.cs        # Custom parsing exceptions
+└── Grammar/                           # Reserved for future grammar files
 ```
 
 ## Architecture Overview
@@ -39,12 +32,12 @@ LexemeExtractor/
 ### Data Flow
 
 ```
-.lexemes file → ANTLR Parser → Visitor → Models → Formatter → Output
+.lexemes file → Regex Parser → Position Decoder → Models → Formatter → Output
 ```
 
 1. **Input**: Compressed `.lexemes` files via glob patterns
-2. **Parsing**: ANTLR grammar processes file structure and lexeme entries
-3. **Decoding**: Custom visitors decode compressed positions and content
+2. **Parsing**: Regex-based parser processes file structure and lexeme entries
+3. **Decoding**: Position decoder handles compressed position encodings
 4. **Modeling**: Parsed data converted to strongly-typed objects
 5. **Formatting**: Output formatters produce human-readable results
 6. **Output**: Console display or file export
@@ -56,23 +49,19 @@ LexemeExtractor/
 - Orchestrates parsing and output for each file
 - Error handling and user feedback
 
-#### **ANTLR Grammar (LexemeFormat.g4)**
-```antlr
-grammar LexemeFormat;
+#### **LexemeFileParser.cs**
+- Regex-based parsing of lexeme file structure
+- Handles header parsing (domain, filename)
+- Processes lexeme entries with type, number, position, and content
+- Integrates with position decoder for compressed encodings
+- Uses permissive lexeme type matching (specification incomplete)
 
-file: header lexeme* EOF;
-header: domain NEWLINE filename NEWLINE encoding NEWLINE;
-lexeme: type radix36Number position content? NEWLINE;
-
-position: shorthandPosition | fullPosition;
-shorthandPosition: ':' | ';' | '@' | '|' | '_' | /* ... */;
-fullPosition: startPosition endPosition;
+```csharp
+// Lexeme type pattern is permissive - complete specification unknown
+// Examples show: 0, 2a, 2v, k, o, 22, b
+private static readonly Regex LexemeLineRegex =
+    new(@"^(\S+)\s+([0-9a-z]+)\s+(\S+)(?:\s+(.*))?$", RegexOptions.Compiled);
 ```
-
-#### **LexemeVisitor.cs**
-- Implements ANTLR visitor pattern
-- Converts parse tree to domain objects
-- Handles position decoding and content parsing
 
 #### **PositionDecoder.cs**
 - Decodes compressed position encodings
@@ -134,11 +123,11 @@ Lexeme #1: Comment (Type: 0)
   Position: Line 2, Column 1-44
   Content: "/* Copyright 1997-1999 by Semantic Designs, Inc */"
 
-Lexeme #2: Package (Type: 2a)
+Lexeme #2: Unknown (Type: 2a)
   Position: Line 3, Column 1-7
   Content: "package"
 
-Lexeme #3: Identifier (Type: 2v)
+Lexeme #3: Unknown (Type: 2v)
   Position: Line 3, Column 9-13
   Content: "javax"
 ```
@@ -161,8 +150,8 @@ Lexeme #3: Identifier (Type: 2v)
 
 ## Dependencies
 
-- **Antlr4.Runtime.Standard**: ANTLR parser runtime
-- **System.Text.Json**: JSON output formatting
+- **System.Text.Json**: JSON output formatting (built-in)
+- **System.Text.RegularExpressions**: Regex parsing (built-in)
 - **.NET 9.0**: Target framework with C# 13 features
 
 ## Build Configuration
@@ -173,16 +162,10 @@ Lexeme #3: Identifier (Type: 2v)
   <TargetFramework>net9.0</TargetFramework>
   <PublishAot>true</PublishAot>
   <SelfContained>true</SelfContained>
+  <LangVersion>latestmajor</LangVersion>
+  <ImplicitUsings>enable</ImplicitUsings>
+  <Nullable>enable</Nullable>
 </PropertyGroup>
-
-<ItemGroup>
-  <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
-  <PackageReference Include="Antlr4.CodeGenerator" Version="4.13.1" />
-</ItemGroup>
-
-<ItemGroup>
-  <Antlr4 Include="Grammar\*.g4" />
-</ItemGroup>
 ```
 
 ## Usage Examples

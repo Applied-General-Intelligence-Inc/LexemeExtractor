@@ -6,7 +6,8 @@ namespace LexemeExtractor.Models;
 public record Lexeme
 {
     /// <summary>
-    /// Lexeme type identifier (e.g., "0", "2a", "2v")
+    /// Lexeme type identifier. Examples from sample files: "0", "2a", "2v", "k", "o", "22", "b"
+    /// Complete specification unknown - grammar suggests [A-O] but examples show broader patterns
     /// </summary>
     public string Type { get; init; } = string.Empty;
 
@@ -64,7 +65,7 @@ public record Lexeme
 
     /// <summary>
     /// Returns true if this lexeme represents comments (type "0" confirmed from examples).
-    /// Note: Other trivia types like whitespace are not yet identified from available documentation.
+    /// Note: Other trivia types are unknown - complete lexeme type specification unavailable.
     /// </summary>
     public bool IsTrivia => Type == "0";
 
@@ -76,11 +77,12 @@ public record Lexeme
     #region Static Type Mapping Support
 
     /// <summary>
-    /// Static dictionary for type name mappings, can be populated from symbol files
+    /// Static dictionary for type name mappings. Only type "0" (Comment) is confirmed.
+    /// Other mappings would need to be determined from DMS lexical specifications.
     /// </summary>
     private static readonly Dictionary<string, string> TypeMappings = new()
     {
-        { "0", "Comment" } // Only confirmed mapping
+        { "0", "Comment" } // Only confirmed mapping from documentation
     };
 
     /// <summary>

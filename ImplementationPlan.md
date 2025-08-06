@@ -1,18 +1,19 @@
 # LexemeExtractor Implementation Plan
 
 ## Current Status
-✅ **Front-end Complete**: Command-line argument parsing, file globbing, stdin/stdout handling  
-⏳ **Parser Implementation**: Core parsing logic needs to be implemented  
-⏳ **Output Formatters**: JSON, CSV, and text formatters need implementation  
+✅ **Front-end Complete**: Command-line argument parsing, file globbing, stdin/stdout handling
+✅ **Parser Implementation**: Regex-based parser with position decoding framework
+⏳ **Position Decoding**: Full compressed position encoding support
+⏳ **Output Formatters**: JSON, CSV, and text formatters need implementation
 
 ## Implementation Phases
 
 ### Phase 1: Core Infrastructure Setup
 **Estimated Time**: 2-3 hours
 
-#### 1.1 Add Dependencies
-- Add ANTLR4 runtime and code generator packages
-- Configure ANTLR4 build integration in .csproj
+#### 1.1 Configure Dependencies
+- Configure .NET 9 project with AOT compilation
+- Enable modern C# features and nullable reference types
 
 #### 1.2 Create Directory Structure
 ```
@@ -31,19 +32,19 @@ LexemeExtractor/
 - `LexemeContent.cs` - Content variants (string, number, boolean)
 - `FileHeader.cs` - Domain, filename, encoding metadata
 
-### Phase 2: ANTLR Grammar Definition
+### Phase 2: Parser Implementation
 **Estimated Time**: 3-4 hours
 
-#### 2.1 Create Grammar File (`Grammar/LexemeFormat.g4`)
-- Define file structure: header + lexemes
-- Handle position encoding patterns
+#### 2.1 Create Regex-Based Parser (`Parsing/LexemeFileParser.cs`)
+- Define regex patterns for lexeme line parsing
+- Handle file structure: header + lexemes
 - Support content variants (strings, numbers, booleans)
-- Generate lexer and parser classes
+- Integrate with position decoder framework
 
-#### 2.2 Test Grammar
+#### 2.2 Test Parser
 - Create sample .lexemes files for testing
-- Verify grammar parses correctly
-- Debug and refine grammar rules
+- Verify parser handles all lexeme types correctly
+- Debug and refine parsing logic
 
 ### Phase 3: Position Decoding System
 **Estimated Time**: 4-5 hours
@@ -80,20 +81,20 @@ LexemeExtractor/
 - Test numeric parsing edge cases
 - Test boolean and empty content
 
-### Phase 5: ANTLR Visitor Implementation
-**Estimated Time**: 3-4 hours
+### Phase 5: Parser Integration
+**Estimated Time**: 2-3 hours
 
-#### 5.1 Implement `LexemeVisitor.cs`
-- Extend ANTLR base visitor
-- Convert parse tree nodes to domain models
-- Integrate position and content decoders
+#### 5.1 Complete Parser Integration
+- Integrate parser with Program.cs
 - Handle parsing errors gracefully
+- Add comprehensive error reporting
+- Validate parser with various file formats
 
-#### 5.2 Implement `LexemeFileParser.cs`
-- High-level parsing interface
-- File reading and ANTLR integration
-- Error handling and reporting
-- Return strongly-typed `LexemeFile` objects
+#### 5.2 Parser Optimization
+- Optimize regex patterns for performance
+- Add support for malformed input handling
+- Implement streaming for large files
+- Add parser unit tests
 
 ### Phase 6: Output Formatters
 **Estimated Time**: 3-4 hours
@@ -147,22 +148,22 @@ LexemeExtractor/
 ## Implementation Order
 
 ### Week 1: Core Foundation
-1. **Day 1-2**: Phase 1 (Infrastructure) + Phase 2 (Grammar)
+1. **Day 1-2**: Phase 1 (Infrastructure) + Phase 2 (Parser Implementation)
 2. **Day 3-4**: Phase 3 (Position Decoding)
 3. **Day 5**: Phase 4 (Content Decoding)
 
 ### Week 2: Integration & Polish
-1. **Day 1-2**: Phase 5 (Visitor Implementation)
+1. **Day 1-2**: Phase 5 (Parser Integration)
 2. **Day 3**: Phase 6 (Output Formatters)
 3. **Day 4**: Phase 7 (Error Handling)
 4. **Day 5**: Phase 8 (Testing & Integration)
 
 ## Key Technical Decisions
 
-### ANTLR Grammar Strategy
-- Use visitor pattern for tree traversal (more control than listeners)
-- Handle position encoding at grammar level vs. post-processing
-- Support incremental parsing for large files
+### Parser Strategy
+- Use regex-based parsing for simplicity and performance
+- Handle position encoding with dedicated decoder classes
+- Support streaming processing for large files
 
 ### Position Decoding Architecture
 - Stateful decoder maintains last position for relative calculations
@@ -204,13 +205,13 @@ LexemeExtractor/
 ## Risk Mitigation
 
 ### Technical Risks
-- **ANTLR Grammar Complexity**: Start with simple grammar, iterate
+- **Regex Pattern Complexity**: Start with simple patterns, iterate
 - **Position Decoding Edge Cases**: Comprehensive test suite
 - **Performance with Large Files**: Implement streaming early
 
 ### Schedule Risks
 - **Underestimated Complexity**: Buffer time in each phase
-- **ANTLR Learning Curve**: Allocate extra time for grammar development
+- **Position Encoding Variations**: Allocate extra time for edge case handling
 - **Integration Issues**: Plan integration testing throughout
 
 ## Next Steps

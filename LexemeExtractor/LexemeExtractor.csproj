@@ -11,13 +11,6 @@
         <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
-        <PackageReference Include="Antlr4.CodeGenerator" Version="4.6.6" />
-    </ItemGroup>
 
-    <ItemGroup>
-        <Antlr4 Include="Grammar\*.g4" />
-    </ItemGroup>
 
 </Project>

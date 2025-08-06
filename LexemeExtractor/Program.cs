@@ -66,7 +66,43 @@ return 0;
 static void ProcessFile(string inputFilePath, string outputFilePath)
 {
     Console.WriteLine($"Processing file: {Path.GetFileName(inputFilePath)} -> {Path.GetFileName(outputFilePath)}");
-    // TODO: Implement actual lexeme processing and output formatting
+
+    try
+    {
+        // Parse the lexeme file
+        var lexemeFile = LexemeExtractor.Parsing.LexemeFileParser.ParseFile(inputFilePath);
+
+        // For now, just write a simple summary to demonstrate parsing works
+        var summary = $"Parsed {lexemeFile.Count} lexemes from {lexemeFile.Header.Filename} ({lexemeFile.Header.Domain})";
+        File.WriteAllText(outputFilePath, summary);
+
+        Console.WriteLine($"Successfully processed {lexemeFile.Count} lexemes");
+
+        // Show first few lexemes for debugging
+        if (inputFilePath.Contains("test") || inputFilePath.Contains("debug"))
+        {
+            Console.WriteLine("\nFirst 5 lexemes:");
+            foreach (var lexeme in lexemeFile.Take(5))
+            {
+                Console.WriteLine($"  Type: '{lexeme.Type}', Number: {lexeme.Number}, Position: {lexeme.Position}, Content: {lexeme.Content}");
+            }
+        }
+
+        // Show IND2000 lexeme specifically
+        var ind2000Lexeme = lexemeFile.FirstOrDefault(l => l.Content.ToString().Contains("IND2000"));
+        if (ind2000Lexeme != null)
+        {
+            Console.WriteLine($"\nIND2000 lexeme found:");
+            Console.WriteLine($"  Type: '{ind2000Lexeme.Type}', Number: {ind2000Lexeme.Number}");
+            Console.WriteLine($"  Position: {ind2000Lexeme.Position}");
+            Console.WriteLine($"  Content: {ind2000Lexeme.Content}");
+            Console.WriteLine($"  Expected: Line 3, Column 21");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error processing file: {ex.Message}");
+    }
 }
 
 static void ProcessStdin(string format)
