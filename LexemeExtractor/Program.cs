@@ -1,4 +1,7 @@
 
+using System.Text;
+using System.Text.Json;
+using LexemeExtractor.Models;
 
 // Parse command line arguments
 var (format, globPattern, useStdin) = ParseArguments(args);
@@ -108,12 +111,26 @@ static void ProcessFile(string inputFilePath, string outputFilePath)
 static void ProcessStdin(string format)
 {
     Console.Error.WriteLine($"Processing stdin with format: {format}");
-    // TODO: Read from stdin, process lexeme data, and write to stdout
-    // For now, just echo the input to demonstrate stdin/stdout functionality
-    string? line;
-    while ((line = Console.ReadLine()) != null)
+
+    try
     {
-        Console.WriteLine($"[{format}] {line}");
+        // Parse lexeme data from stdin using streaming
+        var lexemeFile = LexemeExtractor.Parsing.LexemeFileParser.ParseStdin();
+
+        // Write results to stdout based on format
+        var output = format.ToLowerInvariant() switch
+        {
+            "json" => GenerateJsonOutput(lexemeFile),
+            "csv" => GenerateCsvOutput(lexemeFile),
+            _ => $"Parsed {lexemeFile.Count} lexemes from {lexemeFile.Header.Filename} ({lexemeFile.Header.Domain})"
+        };
+
+        Console.WriteLine(output);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Error processing stdin: {ex.Message}");
+        Environment.Exit(1);
     }
 }
 
@@ -171,4 +188,51 @@ static string GenerateOutputFileName(string inputFilePath, string format)
     };
 
     return Path.Combine(directory, $"{fileName}{extension}");
+}
+
+static string GenerateJsonOutput(LexemeFile lexemeFile)
+{
+    var json = new StringBuilder();
+    json.AppendLine("{");
+    json.AppendLine($"  \"Domain\": \"{EscapeJsonString(lexemeFile.Header.Domain)}\",");
+    json.AppendLine($"  \"Filename\": \"{EscapeJsonString(lexemeFile.Header.Filename)}\",");
+    json.AppendLine($"  \"Encoding\": \"{EscapeJsonString(lexemeFile.Header.Encoding)}\",");
+    json.AppendLine($"  \"LexemeCount\": {lexemeFile.Count},");
+    json.AppendLine("  \"Lexemes\": [");
+
+    var lexemes = lexemeFile.Take(10).ToArray(); // Limit for demo
+    for (int i = 0; i < lexemes.Length; i++)
+    {
+        var lexeme = lexemes[i];
+        json.AppendLine("    {");
+        json.AppendLine($"      \"Type\": \"{EscapeJsonString(lexeme.Type)}\",");
+        json.AppendLine($"      \"Number\": {lexeme.Number},");
+        json.AppendLine($"      \"Position\": \"{EscapeJsonString(lexeme.Position.ToString())}\",");
+        json.AppendLine($"      \"Content\": \"{EscapeJsonString(lexeme.Content.ToString())}\"");
+        json.AppendLine(i < lexemes.Length - 1 ? "    }," : "    }");
+    }
+
+    json.AppendLine("  ]");
+    json.AppendLine("}");
+    return json.ToString();
+}
+
+static string EscapeJsonString(string input)
+{
+    return input.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
+}
+
+static string GenerateCsvOutput(LexemeFile lexemeFile)
+{
+    var csv = new StringBuilder();
+    csv.AppendLine("Type,Number,Line,Column,EndLine,EndColumn,Content");
+
+    foreach (var lexeme in lexemeFile.Take(100)) // Limit for demo
+    {
+        csv.AppendLine($"{lexeme.Type},{lexeme.Number},{lexeme.Position.Line},{lexeme.Position.Column}," +
+                      $"{lexeme.Position.EffectiveEndLine},{lexeme.Position.EffectiveEndColumn}," +
+                      $"\"{lexeme.Content.ToString().Replace("\"", "\"\"")}\"");
+    }
+
+    return csv.ToString();
 }
