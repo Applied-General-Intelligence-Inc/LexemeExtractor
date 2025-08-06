@@ -126,7 +126,8 @@ public class PositionDecoder
 
     private Position DecodeComplexEqualsPattern(string positionStr)
     {
-        var parser = new PositionPatternParser(positionStr[1..]);
+        var lineChanged = _lastLine != _lastPosition.Line;
+        var parser = new PositionPatternParser(positionStr[1..], lineChanged, _lastColumn);
         var firstPart = parser.ParseColumnOrNumber();
 
         if (parser.HasMore() && parser.PeekChar() == '=')
@@ -157,7 +158,8 @@ public class PositionDecoder
     /// </summary>
     private Position DecodeNumericPosition(string positionStr)
     {
-        var parser = new PositionPatternParser(positionStr);
+        // For numeric positions, line numbers are absolute, so line has changed
+        var parser = new PositionPatternParser(positionStr, true, _lastColumn);
         var startLine = parser.ParseNumber();
         var startColumn = parser.ParseColumn();
 
@@ -171,13 +173,14 @@ public class PositionDecoder
     /// </summary>
     private Position DecodeLetterColumn(string positionStr)
     {
-        var column = DecodeColumnValue(positionStr);
+        var encodedValue = DecodeColumnValue(positionStr);
 
         // According to spec: if line number has just changed, this is new column number
         // If line number is same, this is increment to last column number
-        return _lastLine == _lastPosition.Line
-            ? new(_lastLine, _lastColumn + column) // Same line - increment
-            : new(_lastLine, column); // Line changed - absolute column
+        var lineChanged = _lastLine != _lastPosition.Line;
+        var column = lineChanged ? encodedValue : _lastColumn + encodedValue;
+
+        return new(_lastLine, column);
     }
 
     /// <summary>
