@@ -25,9 +25,9 @@ public class LexemeLineParser(string line)
     }
 
     /// <summary>
-    /// Parse radix36 number [0-9a-z]+
+    /// Parse radix36 number [0-9a-z]+ and return as string
     /// </summary>
-    public long ParseRadix36Number()
+    public string ParseRadix36Number()
     {
         if (_position >= _line.Length)
             throw new FormatException($"Expected radix36 number at position {_position} in line: {_line}");
@@ -40,8 +40,10 @@ public class LexemeLineParser(string line)
 
         return _position == start
             ? throw new FormatException($"Expected radix36 number at position {_position} in line: {_line}")
-            : ParseRadix36(_line[start.._position]);
+            : _line[start.._position];
     }
+
+
 
     /// <summary>
     /// Parse position encoding - this is the tricky part

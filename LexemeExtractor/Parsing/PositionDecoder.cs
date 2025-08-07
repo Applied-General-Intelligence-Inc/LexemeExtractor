@@ -9,7 +9,7 @@ namespace LexemeExtractor.Parsing;
 public class PositionDecoder
 {
     private Position _lastPosition = new(1, 1);
-    private int _lastLine = 1;
+    private int _lastLine = 0;
     private int _lastColumn = 1;
 
     /// <summary>
@@ -52,7 +52,7 @@ public class PositionDecoder
     {
         _lastPosition = position;
         _lastLine = position.Line;
-        _lastColumn = position.Column;
+        _lastColumn = position.Column + position.Length ?? 0;
         return position;
     }
 
@@ -60,13 +60,13 @@ public class PositionDecoder
     /// Decode single character position encodings (:, ;)
     /// </summary>
     private Position DecodeSingleCharPosition(int width) =>
-        new(_lastLine, _lastColumn, width);
+        new(_lastPosition.Line, _lastPosition.EffectiveEndColumn, width);
 
     /// <summary>
     /// Decode same line column increment (|, _)
     /// </summary>
     private Position DecodeSameLineIncrement(int increment) =>
-        new(_lastLine, _lastColumn + increment);
+        new(_lastPosition.Line, _lastPosition.EffectiveEndColumn + increment);
 
     /// <summary>
     /// Decode caret pattern: ^column
@@ -74,7 +74,7 @@ public class PositionDecoder
     private Position DecodeCaretPattern(string positionStr) =>
         positionStr.Length < 2
             ? throw new FormatException($"Invalid caret pattern: '{positionStr}'")
-            : new(_lastLine, _lastColumn, DecodeColumnValue(positionStr[1..]), DecodeColumnValue(positionStr[1..]));
+            : new(_lastPosition.Line, _lastPosition.EffectiveEndColumn, DecodeColumnValue(positionStr[1..]), DecodeColumnValue(positionStr[1..]));
 
     /// <summary>
     /// Decode less-than pattern: <column (1 character wide)
@@ -82,7 +82,7 @@ public class PositionDecoder
     private Position DecodeLessThanPattern(string positionStr) =>
         positionStr.Length < 2
             ? throw new FormatException($"Invalid less-than pattern: '{positionStr}'")
-            : new(_lastLine, DecodeColumnValue(positionStr[1..]), 1);
+            : new(_lastPosition.Line, DecodeColumnValue(positionStr[1..]), 1);
 
     /// <summary>
     /// Decode greater-than pattern: >column (2 characters wide)
@@ -90,7 +90,7 @@ public class PositionDecoder
     private Position DecodeGreaterThanPattern(string positionStr) =>
         positionStr.Length < 2
             ? throw new FormatException($"Invalid greater-than pattern: '{positionStr}'")
-            : new(_lastLine, DecodeColumnValue(positionStr[1..]), 2);
+            : new(_lastPosition.Line, DecodeColumnValue(positionStr[1..]), 2);
 
     /// <summary>
     /// Decode bracket patterns: [column column or ]column column
@@ -102,7 +102,7 @@ public class PositionDecoder
 
         var line = nextLine ? _lastLine + 1 : _lastLine;
         var lineChanged = nextLine || line != _lastPosition.Line;
-        var parser = new PositionPatternParser(positionStr[1..], lineChanged, _lastColumn);
+        var parser = new PositionPatternParser(positionStr[1..], lineChanged, _lastPosition.EffectiveEndColumn);
 
         var startColumn = parser.ParseColumn();
         var endColumn = parser.ParseColumn();

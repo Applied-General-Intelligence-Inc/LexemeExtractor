@@ -6,16 +6,20 @@ namespace LexemeExtractor.Models;
 public record Lexeme
 {
     /// <summary>
-    /// Lexeme type identifier. Examples from sample files: "0", "2a", "2v", "k", "o", "22", "b"
-    /// Complete specification unknown - grammar suggests [A-O] but examples show broader patterns
+    /// Complete specification unknown types are [A-O]
     /// </summary>
     public string Type { get; init; } = string.Empty;
 
     /// <summary>
-    /// Numeric identifier for the lexeme
+    /// Base36 number string as it appears in the lexeme file
     /// </summary>
-    public long Number { get; init; }
+    public string NumberString { get; init; } = string.Empty;
 
+    /// <summary>
+    /// Numeric identifier for the lexeme (converted from Base36)
+    /// </summary>
+    public long Number => ParseBase36(NumberString);
+    
     /// <summary>
     /// Position information in the source file
     /// </summary>
@@ -27,12 +31,17 @@ public record Lexeme
     public LexemeContent Content { get; init; } = LexemeContent.Empty;
 
     /// <summary>
+    /// Reference to the lexeme name definition (if available)
+    /// </summary>
+    public LexemeNameDefinition? NameDefinition { get; init; }
+
+    /// <summary>
     /// Creates a new lexeme
     /// </summary>
-    public Lexeme(string type, long number, Position position, LexemeContent content)
+    public Lexeme(string type, string numberString, Position position, LexemeContent content)
     {
         Type = type;
-        Number = number;
+        NumberString = numberString;
         Position = position;
         Content = content;
     }
@@ -49,7 +58,8 @@ public record Lexeme
     {
         var contentStr = Content.ToString();
         var contentDisplay = string.IsNullOrEmpty(contentStr) ? "(empty)" : contentStr;
-        return $"Lexeme #{Number}: {GetTypeName()} (Type: {Type})\n" +
+        var nameDisplay = NameDefinition?.Name ?? GetTypeName();
+        return $"Lexeme #{Number}: {nameDisplay} (Type: {Type})\n" +
                $"  Position: {Position}\n" +
                $"  Content: {contentDisplay}";
     }
@@ -116,6 +126,32 @@ public record Lexeme
         TypeMappings.Clear();
         TypeMappings["0"] = "Comment"; // Keep the confirmed mapping
     }
+
+    #endregion
+
+    #region Base36 Conversion Methods
+
+    /// <summary>
+    /// Parses a Base36 string to a long value
+    /// </summary>
+    /// <param name="value">Base36 string to parse</param>
+    /// <returns>Long value</returns>
+    private static long ParseBase36(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return 0;
+
+        return value.ToLowerInvariant()
+            .Select(c => c switch
+            {
+                >= '0' and <= '9' => c - '0',
+                >= 'a' and <= 'z' => c - 'a' + 10,
+                _ => throw new FormatException($"Invalid Base36 character: {c}")
+            })
+            .Aggregate(0L, (current, digit) => current * 36 + digit);
+    }
+
+
 
     #endregion
 }

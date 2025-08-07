@@ -1,7 +1,8 @@
 
 using System.Text;
-using System.Text.Json;
 using LexemeExtractor.Models;
+using LexemeExtractor.OutputFormatters;
+using LexemeExtractor.Parsing;
 
 // Parse command line arguments
 var (format, globPattern, useStdin) = ParseArguments(args);
@@ -10,7 +11,7 @@ if (globPattern == null && !useStdin)
 {
     Console.WriteLine("Usage: LexemeExtractor [--format <format>] <glob-pattern>");
     Console.WriteLine("       LexemeExtractor [--format <format>] < input.lexemes");
-    Console.WriteLine("Formats: text (default for files), json, csv");
+    Console.WriteLine($"Formats: {string.Join(", ", FormatterFactory.GetSupportedFormats())} (default: text)");
     Console.WriteLine("Example: LexemeExtractor --format json \"*.lexemes\"");
     Console.WriteLine("Example: LexemeExtractor \"*.lexemes\"");
     Console.WriteLine("Example: cat file.lexemes | LexemeExtractor --format json");
@@ -54,7 +55,7 @@ try
         foreach (var filePath in matchingFiles)
         {
             var outputFilePath = GenerateOutputFileName(filePath, format);
-            ProcessFile(filePath, outputFilePath);
+            ProcessFile(filePath, outputFilePath, format);
         }
     }
 }
@@ -66,46 +67,67 @@ catch (Exception ex)
 
 return 0;
 
-static void ProcessFile(string inputFilePath, string outputFilePath)
+static void ProcessFile(string inputFilePath, string outputFilePath, string format)
 {
     Console.WriteLine($"Processing file: {Path.GetFileName(inputFilePath)} -> {Path.GetFileName(outputFilePath)}");
 
     try
     {
-        // Parse the lexeme file
-        var lexemeFile = LexemeExtractor.Parsing.LexemeFileParser.ParseFile(inputFilePath);
+        using var outputWriter = new StreamWriter(outputFilePath);
+        using var formatter = FormatterFactory.CreateFormatter(format, outputWriter);
 
-        // For now, just write a simple summary to demonstrate parsing works
-        var summary = $"Parsed {lexemeFile.Count} lexemes from {lexemeFile.Header.Filename} ({lexemeFile.Header.Domain})";
-        File.WriteAllText(outputFilePath, summary);
+        ProcessFileWithStreaming(inputFilePath, formatter);
 
-        Console.WriteLine($"Successfully processed {lexemeFile.Count} lexemes");
-
-        // Show first few lexemes for debugging
-        if (inputFilePath.Contains("test") || inputFilePath.Contains("debug"))
-        {
-            Console.WriteLine("\nFirst 5 lexemes:");
-            foreach (var lexeme in lexemeFile.Take(5))
-            {
-                Console.WriteLine($"  Type: '{lexeme.Type}', Number: {lexeme.Number}, Position: {lexeme.Position}, Content: {lexeme.Content}");
-            }
-        }
-
-        // Show IND2000 lexeme specifically
-        var ind2000Lexeme = lexemeFile.FirstOrDefault(l => l.Content.ToString().Contains("IND2000"));
-        if (ind2000Lexeme != null)
-        {
-            Console.WriteLine($"\nIND2000 lexeme found:");
-            Console.WriteLine($"  Type: '{ind2000Lexeme.Type}', Number: {ind2000Lexeme.Number}");
-            Console.WriteLine($"  Position: {ind2000Lexeme.Position}");
-            Console.WriteLine($"  Content: {ind2000Lexeme.Content}");
-            Console.WriteLine($"  Expected: Line 3, Column 21");
-        }
+        Console.WriteLine($"Successfully processed file with streaming formatter");
     }
     catch (Exception ex)
     {
         Console.WriteLine($"Error processing file: {ex.Message}");
     }
+}
+
+static void ProcessFileWithStreaming(string filePath, ILexemeFormatter formatter)
+{
+    using var reader = new StreamReader(filePath);
+
+    // Parse header - real format has 3 lines: domain, filename, encoding
+    var domain = reader.ReadLine()?.Trim() ?? throw new FormatException("Missing domain line");
+    var filename = reader.ReadLine()?.Trim() ?? throw new FormatException("Missing filename line");
+    var encoding = reader.ReadLine()?.Trim() ?? "UTF-8";
+    var header = new FileHeader(domain, filename, encoding);
+
+    formatter.WriteHeader(header);
+
+    // Stream lexemes
+    var positionDecoder = new PositionDecoder();
+    var lineNumber = 4; // Start counting after header
+    var count = 0;
+
+    string? line;
+    while ((line = reader.ReadLine()) != null)
+    {
+        line = line.Trim();
+        if (string.IsNullOrEmpty(line))
+        {
+            lineNumber++;
+            continue;
+        }
+
+        try
+        {
+            var lexeme = LexemeFileParser.ParseLexemeLine(line, positionDecoder);
+            formatter.WriteLexeme(lexeme);
+            count++;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Error parsing line {lineNumber}: {line}", ex);
+        }
+
+        lineNumber++;
+    }
+
+    formatter.WriteFooter(count);
 }
 
 static void ProcessStdin(string format)
@@ -114,24 +136,56 @@ static void ProcessStdin(string format)
 
     try
     {
-        // Parse lexeme data from stdin using streaming
-        var lexemeFile = LexemeExtractor.Parsing.LexemeFileParser.ParseStdin();
-
-        // Write results to stdout based on format
-        var output = format.ToLowerInvariant() switch
-        {
-            "json" => GenerateJsonOutput(lexemeFile),
-            "csv" => GenerateCsvOutput(lexemeFile),
-            _ => $"Parsed {lexemeFile.Count} lexemes from {lexemeFile.Header.Filename} ({lexemeFile.Header.Domain})"
-        };
-
-        Console.WriteLine(output);
+        using var formatter = FormatterFactory.CreateFormatter(format, Console.Out);
+        ProcessStreamWithStreaming(Console.In, formatter);
     }
     catch (Exception ex)
     {
         Console.Error.WriteLine($"Error processing stdin: {ex.Message}");
         Environment.Exit(1);
     }
+}
+
+static void ProcessStreamWithStreaming(TextReader reader, ILexemeFormatter formatter)
+{
+    // Parse header - real format has 3 lines: domain, filename, encoding
+    var domain = reader.ReadLine()?.Trim() ?? throw new FormatException("Missing domain line");
+    var filename = reader.ReadLine()?.Trim() ?? throw new FormatException("Missing filename line");
+    var encoding = reader.ReadLine()?.Trim() ?? "UTF-8";
+    var header = new FileHeader(domain, filename, encoding);
+
+    formatter.WriteHeader(header);
+
+    // Stream lexemes
+    var positionDecoder = new PositionDecoder();
+    var lineNumber = 4; // Start counting after header
+    var count = 0;
+
+    string? line;
+    while ((line = reader.ReadLine()) != null)
+    {
+        line = line.Trim();
+        if (string.IsNullOrEmpty(line))
+        {
+            lineNumber++;
+            continue;
+        }
+
+        try
+        {
+            var lexeme = LexemeFileParser.ParseLexemeLine(line, positionDecoder);
+            formatter.WriteLexeme(lexeme);
+            count++;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Error parsing line {lineNumber}: {line}", ex);
+        }
+
+        lineNumber++;
+    }
+
+    formatter.WriteFooter(count);
 }
 
 static (string format, string? globPattern, bool useStdin) ParseArguments(string[] args)
@@ -158,9 +212,10 @@ static (string format, string? globPattern, bool useStdin) ParseArguments(string
         if (args[i] == "--format" && i + 1 < args.Length)
         {
             format = args[i + 1].ToLowerInvariant();
-            if (format != "text" && format != "json" && format != "csv")
+            var supportedFormats = FormatterFactory.GetSupportedFormats();
+            if (!supportedFormats.Contains(format))
             {
-                Console.WriteLine($"Invalid format: {format}. Valid formats are: text, json, csv");
+                Console.WriteLine($"Invalid format: {format}. Valid formats are: {string.Join(", ", supportedFormats)}");
                 return (format, null, false);
             }
             i++; // skip the format value
@@ -179,60 +234,9 @@ static string GenerateOutputFileName(string inputFilePath, string format)
 {
     var directory = Path.GetDirectoryName(inputFilePath) ?? ".";
     var fileName = Path.GetFileName(inputFilePath);
-
-    var extension = format switch
-    {
-        "json" => ".json",
-        "csv" => ".csv",
-        _ => ".txt" // text format outputs to .txt file
-    };
+    var extension = FormatterFactory.GetFileExtension(format);
 
     return Path.Combine(directory, $"{fileName}{extension}");
 }
 
-static string GenerateJsonOutput(LexemeFile lexemeFile)
-{
-    var json = new StringBuilder();
-    json.AppendLine("{");
-    json.AppendLine($"  \"Domain\": \"{EscapeJsonString(lexemeFile.Header.Domain)}\",");
-    json.AppendLine($"  \"Filename\": \"{EscapeJsonString(lexemeFile.Header.Filename)}\",");
-    json.AppendLine($"  \"Encoding\": \"{EscapeJsonString(lexemeFile.Header.Encoding)}\",");
-    json.AppendLine($"  \"LexemeCount\": {lexemeFile.Count},");
-    json.AppendLine("  \"Lexemes\": [");
 
-    var lexemes = lexemeFile.Take(10).ToArray(); // Limit for demo
-    for (int i = 0; i < lexemes.Length; i++)
-    {
-        var lexeme = lexemes[i];
-        json.AppendLine("    {");
-        json.AppendLine($"      \"Type\": \"{EscapeJsonString(lexeme.Type)}\",");
-        json.AppendLine($"      \"Number\": {lexeme.Number},");
-        json.AppendLine($"      \"Position\": \"{EscapeJsonString(lexeme.Position.ToString())}\",");
-        json.AppendLine($"      \"Content\": \"{EscapeJsonString(lexeme.Content.ToString())}\"");
-        json.AppendLine(i < lexemes.Length - 1 ? "    }," : "    }");
-    }
-
-    json.AppendLine("  ]");
-    json.AppendLine("}");
-    return json.ToString();
-}
-
-static string EscapeJsonString(string input)
-{
-    return input.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
-}
-
-static string GenerateCsvOutput(LexemeFile lexemeFile)
-{
-    var csv = new StringBuilder();
-    csv.AppendLine("Type,Number,Line,Column,EndLine,EndColumn,Content");
-
-    foreach (var lexeme in lexemeFile.Take(100)) // Limit for demo
-    {
-        csv.AppendLine($"{lexeme.Type},{lexeme.Number},{lexeme.Position.Line},{lexeme.Position.Column}," +
-                      $"{lexeme.Position.EffectiveEndLine},{lexeme.Position.EffectiveEndColumn}," +
-                      $"\"{lexeme.Content.ToString().Replace("\"", "\"\"")}\"");
-    }
-
-    return csv.ToString();
-}

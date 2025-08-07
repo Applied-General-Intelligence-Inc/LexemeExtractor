@@ -6,8 +6,8 @@ namespace LexemeExtractor.Parsing;
 internal class PositionPatternParser(string pattern, bool lineChanged = false, int lastColumn = 1)
 {
     private readonly string _pattern = pattern;
-    private readonly bool _lineChanged = lineChanged;
-    private readonly int _lastColumn = lastColumn;
+    private bool _lineChanged = lineChanged;
+    private int _lastColumn = lastColumn;
     private int _position = 0;
 
     public bool HasMore() => _position < _pattern.Length;
@@ -38,13 +38,19 @@ internal class PositionPatternParser(string pattern, bool lineChanged = false, i
         if (!HasMore())
             throw new FormatException($"Expected column at position {_position} in pattern '{_pattern}'");
 
-        return _pattern[_position] switch
+        _lineChanged = false;
+        
+        var newColumn = _pattern[_position] switch
         {
             '=' => (_position++, _lastColumn).Item2, // Same as last column
-            var c when c is >= '\x41' and <= '\x7E' => ParseCharacterColumn(c),
+            var c and >= '\x41' and <= '\x7E' => ParseCharacterColumn(c),
             var c when char.IsDigit(c) => ParseNumber(),
             _ => throw new FormatException($"Invalid column character at position {_position} in pattern '{_pattern}'")
         };
+        
+        _lastColumn = newColumn;
+        
+        return newColumn;;
     }
 
     private int ParseCharacterColumn(char c)
