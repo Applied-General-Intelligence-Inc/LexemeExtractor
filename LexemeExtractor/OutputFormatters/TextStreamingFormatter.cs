@@ -24,7 +24,7 @@ public class TextStreamingFormatter : StreamingFormatterBase
         if (Disposed)
             throw new ObjectDisposedException(nameof(TextStreamingFormatter));
 
-        Writer.WriteLine("=== Lexeme File Analysis ===");
+        Writer.WriteLine("=== Lexeme File Decompressor Output ===");
         Writer.WriteLine($"Domain: {header.Domain}");
         Writer.WriteLine($"Filename: {header.Filename}");
         Writer.WriteLine($"Encoding: {header.Encoding}");
@@ -38,7 +38,11 @@ public class TextStreamingFormatter : StreamingFormatterBase
     /// </summary>
     protected override void WriteFormattedLexeme(Lexeme lexeme)
     {
-        Writer.WriteLine($"#{lexeme.NumberString}({lexeme.Number}) [{lexeme.Type}] @ {lexeme.Position} = {FormatContent(lexeme.Content)}");
+        var nameDisplay = FormatNameWithType(lexeme);
+        var contentDisplay = FormatContent(lexeme.Content);
+        var contentPart = contentDisplay == "(empty)" ? "" : $" = {contentDisplay}";
+
+        Writer.WriteLine($"{nameDisplay} #{lexeme.NumberString}({lexeme.Number}) [{lexeme.Type}] @ {lexeme.Position}{contentPart}");
     }
 
     /// <summary>
@@ -52,6 +56,21 @@ public class TextStreamingFormatter : StreamingFormatterBase
         Writer.WriteLine();
         Writer.WriteLine("--------");
         Writer.WriteLine($"Total lexemes processed: {totalCount}");
+    }
+
+    /// <summary>
+    /// Formats the name with optional type in parentheses
+    /// </summary>
+    private static string FormatNameWithType(Lexeme lexeme)
+    {
+        var name = lexeme.NameDefinition?.Name;
+        if (string.IsNullOrEmpty(name))
+            return ""; // No name available
+
+        var dataType = lexeme.NameDefinition?.DataType;
+        return string.IsNullOrEmpty(dataType)
+            ? name
+            : $"{name}({dataType})";
     }
 
     /// <summary>

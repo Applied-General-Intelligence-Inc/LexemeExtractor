@@ -17,17 +17,44 @@ public static class LexemeNameDefinitionParser
         RegexOptions.Compiled);
 
     /// <summary>
-    /// Parses a lexeme name definition file and returns a dictionary by name
+    /// Parses a lexeme name definition file and returns a dictionary by number (base36)
     /// </summary>
     /// <param name="filePath">Path to the definition file</param>
-    /// <returns>Dictionary of lexeme name definitions keyed by name</returns>
+    /// <returns>Dictionary of lexeme name definitions keyed by number in base36</returns>
     public static Dictionary<string, LexemeNameDefinition> ParseFile(string filePath)
     {
         if (!File.Exists(filePath))
             return new Dictionary<string, LexemeNameDefinition>();
 
-        var lines = File.ReadAllLines(filePath);
-        return ParseLines(lines);
+        var definitions = new Dictionary<string, LexemeNameDefinition>();
+        var lineNumber = 0;
+
+        using var reader = new StreamReader(filePath);
+        string? line;
+        while ((line = reader.ReadLine()) != null)
+        {
+            lineNumber++;
+            line = line.Trim();
+
+            if (string.IsNullOrEmpty(line) || line.StartsWith('#') || line.StartsWith("//"))
+                continue;
+
+            try
+            {
+                var definition = ParseLine(line);
+                if (definition != null)
+                {
+                    var base36Key = ToBase36(definition.Number);
+                    definitions[base36Key] = definition;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error parsing definition line {lineNumber}: {line}", ex);
+            }
+        }
+
+        return definitions;
     }
 
     /// <summary>
@@ -102,15 +129,86 @@ public static class LexemeNameDefinitionParser
     }
 
     /// <summary>
-    /// Gets the expected definition file path for a given domain and lexeme file path
+    /// Gets the expected definition file path for a given domain and lexeme file path.
+    /// Searches in this order: same directory as input file, current directory,
+    /// LEXEME_NAMES_FILES environment variable directory, executable directory.
     /// </summary>
     /// <param name="domain">Domain from the lexeme file header</param>
     /// <param name="lexemeFilePath">Path to the lexeme file</param>
-    /// <returns>Expected path to the definition file</returns>
+    /// <returns>Path to the definition file if found, otherwise path in same directory as lexeme file</returns>
     public static string GetDefinitionFilePath(string domain, string lexemeFilePath)
     {
-        var directory = Path.GetDirectoryName(lexemeFilePath) ?? "";
         var domainFileName = $"{domain}.txt";
-        return Path.Combine(directory, domainFileName);
+
+        // Search order as specified:
+        var searchDirectories = new List<string>();
+
+        // 1. Same directory as input file
+        var inputDirectory = Path.GetDirectoryName(lexemeFilePath);
+        if (!string.IsNullOrEmpty(inputDirectory))
+        {
+            searchDirectories.Add(inputDirectory);
+        }
+
+        // 2. Program's current directory
+        searchDirectories.Add(Directory.GetCurrentDirectory());
+
+        // 3. Directory specified by LEXEME_NAMES_FILES environment variable
+        var envDirectory = Environment.GetEnvironmentVariable("LEXEME_NAMES_FILES");
+        if (!string.IsNullOrEmpty(envDirectory) && Directory.Exists(envDirectory))
+        {
+            searchDirectories.Add(envDirectory);
+        }
+
+        // 4. Executable's directory
+        var executablePath = Environment.ProcessPath;
+        if (!string.IsNullOrEmpty(executablePath))
+        {
+            var executableDirectory = Path.GetDirectoryName(executablePath);
+            if (!string.IsNullOrEmpty(executableDirectory))
+            {
+                searchDirectories.Add(executableDirectory);
+            }
+        }
+
+        // Search in order and return first found file
+        foreach (var directory in searchDirectories)
+        {
+            var candidatePath = Path.Combine(directory, domainFileName);
+            if (File.Exists(candidatePath))
+            {
+                return candidatePath;
+            }
+        }
+
+        // If not found anywhere, return path in same directory as lexeme file (for consistency)
+        return Path.Combine(inputDirectory ?? "", domainFileName);
+    }
+
+    /// <summary>
+    /// Converts a long value to its Base36 string representation
+    /// </summary>
+    /// <param name="value">Long value to convert</param>
+    /// <returns>Base36 string representation</returns>
+    private static string ToBase36(long value)
+    {
+        if (value == 0)
+            return "0";
+
+        const string digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+        var result = new List<char>();
+        var absValue = Math.Abs(value);
+
+        while (absValue > 0)
+        {
+            result.Add(digits[(int)(absValue % 36)]);
+            absValue /= 36;
+        }
+
+        if (value < 0)
+            result.Add('-');
+
+        result.Reverse();
+        return new string(result.ToArray());
     }
 }

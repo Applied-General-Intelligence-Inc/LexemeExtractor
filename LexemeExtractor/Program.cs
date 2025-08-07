@@ -98,6 +98,10 @@ static void ProcessFileWithStreaming(string filePath, ILexemeFormatter formatter
 
     formatter.WriteHeader(header);
 
+    // Load lexeme name definitions if available
+    var definitionFilePath = LexemeNameDefinitionParser.GetDefinitionFilePath(domain, filePath);
+    var nameDefinitions = LexemeNameDefinitionParser.ParseFile(definitionFilePath);
+
     // Stream lexemes
     var positionDecoder = new PositionDecoder();
     var lineNumber = 4; // Start counting after header
@@ -115,7 +119,7 @@ static void ProcessFileWithStreaming(string filePath, ILexemeFormatter formatter
 
         try
         {
-            var lexeme = LexemeFileParser.ParseLexemeLine(line, positionDecoder);
+            var lexeme = LexemeFileParser.ParseLexemeLine(line, positionDecoder, nameDefinitions);
             formatter.WriteLexeme(lexeme);
             count++;
         }
@@ -156,6 +160,10 @@ static void ProcessStreamWithStreaming(TextReader reader, ILexemeFormatter forma
 
     formatter.WriteHeader(header);
 
+    // Try to load lexeme name definitions using search order (current dir, env var, executable dir)
+    var definitionFilePath = LexemeNameDefinitionParser.GetDefinitionFilePath(domain, "<stdin>");
+    var nameDefinitions = LexemeNameDefinitionParser.ParseFile(definitionFilePath);
+
     // Stream lexemes
     var positionDecoder = new PositionDecoder();
     var lineNumber = 4; // Start counting after header
@@ -173,7 +181,7 @@ static void ProcessStreamWithStreaming(TextReader reader, ILexemeFormatter forma
 
         try
         {
-            var lexeme = LexemeFileParser.ParseLexemeLine(line, positionDecoder);
+            var lexeme = LexemeFileParser.ParseLexemeLine(line, positionDecoder, nameDefinitions);
             formatter.WriteLexeme(lexeme);
             count++;
         }
