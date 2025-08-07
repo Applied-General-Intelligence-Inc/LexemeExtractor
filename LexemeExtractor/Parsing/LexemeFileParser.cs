@@ -4,7 +4,6 @@ namespace LexemeExtractor.Parsing;
 
 /// <summary>
 /// Manual parser for .lexemes files
-/// This is a temporary implementation while we resolve ANTLR compatibility issues
 /// </summary>
 public class LexemeFileParser
 {
