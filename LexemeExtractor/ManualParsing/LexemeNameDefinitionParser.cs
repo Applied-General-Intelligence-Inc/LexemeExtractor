@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using LexemeExtractor.Models;
 
-namespace LexemeExtractor.Parsing;
+namespace LexemeExtractor.ManualParsing;
 
 /// <summary>
 /// Parser for lexeme name definition files

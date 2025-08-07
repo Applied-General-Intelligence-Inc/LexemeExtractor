@@ -1,6 +1,6 @@
 using LexemeExtractor.Models;
 
-namespace LexemeExtractor.Parsing;
+namespace LexemeExtractor.ManualParsing;
 
 /// <summary>
 /// Interface for streaming lexeme parsers that process lexemes one at a time

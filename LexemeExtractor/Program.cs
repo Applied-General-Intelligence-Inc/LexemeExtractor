@@ -1,20 +1,18 @@
 
 using System.Text;
+using LexemeExtractor.Superpower;
 using LexemeExtractor.Models;
-using LexemeExtractor.OutputFormatters;
-using LexemeExtractor.Parsing;
+using static LexemeExtractor.Superpower.CompressedLexemeParser;
 
 // Parse command line arguments
-var (format, globPattern, useStdin) = ParseArguments(args);
+var (globPattern, useStdin) = ParseArguments(args);
 
 if (globPattern == null && !useStdin)
 {
-    Console.WriteLine("Usage: LexemeExtractor [--format <format>] <glob-pattern>");
-    Console.WriteLine("       LexemeExtractor [--format <format>] < input.lexemes");
-    Console.WriteLine($"Formats: {string.Join(", ", FormatterFactory.GetSupportedFormats())} (default: text)");
-    Console.WriteLine("Example: LexemeExtractor --format json \"*.lexemes\"");
+    Console.WriteLine("Usage: LexemeExtractor <glob-pattern>");
+    Console.WriteLine("       LexemeExtractor < input.lexemes");
     Console.WriteLine("Example: LexemeExtractor \"*.lexemes\"");
-    Console.WriteLine("Example: cat file.lexemes | LexemeExtractor --format json");
+    Console.WriteLine("Example: cat file.lexemes | LexemeExtractor");
     return 1;
 }
 
@@ -22,8 +20,8 @@ try
 {
     if (useStdin)
     {
-        // Process input from stdin and output to stdout
-        ProcessStdin(format);
+        // Process input from stdin
+        ProcessStdin();
     }
     else
     {
@@ -51,11 +49,10 @@ try
             return 0;
         }
 
-        // Process each matching file using modern foreach
+        // Process each matching file
         foreach (var filePath in matchingFiles)
         {
-            var outputFilePath = GenerateOutputFileName(filePath, format);
-            ProcessFile(filePath, outputFilePath, format);
+            ProcessFile(filePath);
         }
     }
 }
@@ -67,138 +64,85 @@ catch (Exception ex)
 
 return 0;
 
-static void ProcessFile(string inputFilePath, string outputFilePath, string format)
+static void ProcessFile(string inputFilePath)
 {
-    Console.WriteLine($"Processing file: {Path.GetFileName(inputFilePath)} -> {Path.GetFileName(outputFilePath)}");
+    Console.WriteLine($"Processing file: {Path.GetFileName(inputFilePath)}");
 
     try
     {
-        using var outputWriter = new StreamWriter(outputFilePath);
-        using var formatter = FormatterFactory.CreateFormatter(format, outputWriter);
+        var fileContent = System.IO.File.ReadAllText(inputFilePath);
+        var parsedFile = Parse(fileContent);
 
-        ProcessFileWithStreaming(inputFilePath, formatter);
+        Console.WriteLine($"Successfully parsed file:");
+        Console.WriteLine($"  Domain: {parsedFile.Domain}");
+        Console.WriteLine($"  File Source: {parsedFile.FileSourceInformation}");
+        Console.WriteLine($"  Encoding: {parsedFile.Encoding}");
+        Console.WriteLine($"  Lexemes: {parsedFile.Lexemes.Count}");
 
-        Console.WriteLine($"Successfully processed file with streaming formatter");
+        // Display first few lexemes for verification
+        var lexemesToShow = Math.Min(5, parsedFile.Lexemes.Count);
+        for (int i = 0; i < lexemesToShow; i++)
+        {
+            var lexeme = parsedFile.Lexemes[i];
+            Console.WriteLine($"  [{i}] Type: {lexeme.Type}, Number: {lexeme.Radix36Number}, Position: {lexeme.Position.GetType().Name}, Content: {lexeme.Content.GetType().Name}");
+        }
+
+        if (parsedFile.Lexemes.Count > lexemesToShow)
+        {
+            Console.WriteLine($"  ... and {parsedFile.Lexemes.Count - lexemesToShow} more lexemes");
+        }
     }
     catch (Exception ex)
     {
         Console.WriteLine($"Error processing file: {ex.Message}");
+        if (ex.InnerException != null)
+        {
+            Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+        }
     }
 }
 
-static void ProcessFileWithStreaming(string filePath, ILexemeFormatter formatter)
+static void ProcessStdin()
 {
-    using var reader = new StreamReader(filePath);
-
-    // Parse header - real format has 3 lines: domain, filename, encoding
-    var domain = reader.ReadLine()?.Trim() ?? throw new FormatException("Missing domain line");
-    var filename = reader.ReadLine()?.Trim() ?? throw new FormatException("Missing filename line");
-    var encoding = reader.ReadLine()?.Trim() ?? "UTF-8";
-    var header = new FileHeader(domain, filename, encoding);
-
-    formatter.WriteHeader(header);
-
-    // Load lexeme name definitions if available
-    var definitionFilePath = LexemeNameDefinitionParser.GetDefinitionFilePath(domain, filePath);
-    var nameDefinitions = LexemeNameDefinitionParser.ParseFile(definitionFilePath);
-
-    // Stream lexemes
-    var positionDecoder = new PositionDecoder();
-    var lineNumber = 4; // Start counting after header
-    var count = 0;
-
-    string? line;
-    while ((line = reader.ReadLine()) != null)
-    {
-        line = line.Trim();
-        if (string.IsNullOrEmpty(line))
-        {
-            lineNumber++;
-            continue;
-        }
-
-        try
-        {
-            var lexeme = LexemeFileParser.ParseLexemeLine(line, positionDecoder, nameDefinitions);
-            formatter.WriteLexeme(lexeme);
-            count++;
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"Error parsing line {lineNumber}: {line}", ex);
-        }
-
-        lineNumber++;
-    }
-
-    formatter.WriteFooter(count);
-}
-
-static void ProcessStdin(string format)
-{
-    Console.Error.WriteLine($"Processing stdin with format: {format}");
+    Console.Error.WriteLine("Processing stdin");
 
     try
     {
-        using var formatter = FormatterFactory.CreateFormatter(format, Console.Out);
-        ProcessStreamWithStreaming(Console.In, formatter);
+        var input = Console.In.ReadToEnd();
+        var parsedFile = Parse(input);
+
+        Console.WriteLine($"Successfully parsed stdin:");
+        Console.WriteLine($"  Domain: {parsedFile.Domain}");
+        Console.WriteLine($"  File Source: {parsedFile.FileSourceInformation}");
+        Console.WriteLine($"  Encoding: {parsedFile.Encoding}");
+        Console.WriteLine($"  Lexemes: {parsedFile.Lexemes.Count}");
+
+        // Display first few lexemes for verification
+        var lexemesToShow = Math.Min(5, parsedFile.Lexemes.Count);
+        for (int i = 0; i < lexemesToShow; i++)
+        {
+            var lexeme = parsedFile.Lexemes[i];
+            Console.WriteLine($"  [{i}] Type: {lexeme.Type}, Number: {lexeme.Radix36Number}, Position: {lexeme.Position.GetType().Name}, Content: {lexeme.Content.GetType().Name}");
+        }
+
+        if (parsedFile.Lexemes.Count > lexemesToShow)
+        {
+            Console.WriteLine($"  ... and {parsedFile.Lexemes.Count - lexemesToShow} more lexemes");
+        }
     }
     catch (Exception ex)
     {
         Console.Error.WriteLine($"Error processing stdin: {ex.Message}");
+        if (ex.InnerException != null)
+        {
+            Console.Error.WriteLine($"Inner exception: {ex.InnerException.Message}");
+        }
         Environment.Exit(1);
     }
 }
 
-static void ProcessStreamWithStreaming(TextReader reader, ILexemeFormatter formatter)
+static (string? globPattern, bool useStdin) ParseArguments(string[] args)
 {
-    // Parse header - real format has 3 lines: domain, filename, encoding
-    var domain = reader.ReadLine()?.Trim() ?? throw new FormatException("Missing domain line");
-    var filename = reader.ReadLine()?.Trim() ?? throw new FormatException("Missing filename line");
-    var encoding = reader.ReadLine()?.Trim() ?? "UTF-8";
-    var header = new FileHeader(domain, filename, encoding);
-
-    formatter.WriteHeader(header);
-
-    // Try to load lexeme name definitions using search order (current dir, env var, executable dir)
-    var definitionFilePath = LexemeNameDefinitionParser.GetDefinitionFilePath(domain, "<stdin>");
-    var nameDefinitions = LexemeNameDefinitionParser.ParseFile(definitionFilePath);
-
-    // Stream lexemes
-    var positionDecoder = new PositionDecoder();
-    var lineNumber = 4; // Start counting after header
-    var count = 0;
-
-    string? line;
-    while ((line = reader.ReadLine()) != null)
-    {
-        line = line.Trim();
-        if (string.IsNullOrEmpty(line))
-        {
-            lineNumber++;
-            continue;
-        }
-
-        try
-        {
-            var lexeme = LexemeFileParser.ParseLexemeLine(line, positionDecoder, nameDefinitions);
-            formatter.WriteLexeme(lexeme);
-            count++;
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"Error parsing line {lineNumber}: {line}", ex);
-        }
-
-        lineNumber++;
-    }
-
-    formatter.WriteFooter(count);
-}
-
-static (string format, string? globPattern, bool useStdin) ParseArguments(string[] args)
-{
-    var format = "text"; // default format for files
     string? globPattern = null;
     bool useStdin = false;
 
@@ -206,45 +150,24 @@ static (string format, string? globPattern, bool useStdin) ParseArguments(string
     if (!Console.IsInputRedirected && args.Length == 0)
     {
         // No arguments and no piped input - show usage
-        return (format, null, false);
+        return (null, false);
     }
 
-    if (Console.IsInputRedirected || (args.Length > 0 && args.All(arg => arg.StartsWith("--"))))
+    if (Console.IsInputRedirected || args.Length == 0)
     {
-        // Either input is redirected, or all arguments are options (no glob pattern)
+        // Either input is redirected, or no arguments provided
         useStdin = true;
     }
-
-    for (int i = 0; i < args.Length; i++)
+    else
     {
-        if (args[i] == "--format" && i + 1 < args.Length)
-        {
-            format = args[i + 1].ToLowerInvariant();
-            var supportedFormats = FormatterFactory.GetSupportedFormats();
-            if (!supportedFormats.Contains(format))
-            {
-                Console.WriteLine($"Invalid format: {format}. Valid formats are: {string.Join(", ", supportedFormats)}");
-                return (format, null, false);
-            }
-            i++; // skip the format value
-        }
-        else if (!args[i].StartsWith("--"))
-        {
-            globPattern = args[i];
-            useStdin = false; // If we have a glob pattern, don't use stdin
-        }
+        // Use the first argument as the glob pattern
+        globPattern = args[0];
+        useStdin = false;
     }
 
-    return (format, globPattern, useStdin);
+    return (globPattern, useStdin);
 }
 
-static string GenerateOutputFileName(string inputFilePath, string format)
-{
-    var directory = Path.GetDirectoryName(inputFilePath) ?? ".";
-    var fileName = Path.GetFileName(inputFilePath);
-    var extension = FormatterFactory.GetFileExtension(format);
 
-    return Path.Combine(directory, $"{fileName}{extension}");
-}
 
 

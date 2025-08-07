@@ -1,4 +1,4 @@
-namespace LexemeExtractor.Parsing;
+namespace LexemeExtractor.ManualParsing;
 
 /// <summary>
 /// Helper class for parsing complex position patterns

@@ -1,6 +1,6 @@
 using LexemeExtractor.Models;
 
-namespace LexemeExtractor.Parsing;
+namespace LexemeExtractor.ManualParsing;
 
 /// <summary>
 /// Sequential parser for lexeme lines without delimiters

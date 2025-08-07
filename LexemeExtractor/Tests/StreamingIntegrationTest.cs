@@ -1,7 +1,7 @@
 using System.Text;
+using LexemeExtractor.ManualParsing;
 using LexemeExtractor.Models;
 using LexemeExtractor.OutputFormatters;
-using LexemeExtractor.Parsing;
 
 namespace LexemeExtractor.Tests;
 

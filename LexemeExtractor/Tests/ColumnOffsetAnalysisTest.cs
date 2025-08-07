@@ -1,6 +1,6 @@
 using System.Text;
+using LexemeExtractor.ManualParsing;
 using LexemeExtractor.Models;
-using LexemeExtractor.Parsing;
 
 namespace LexemeExtractor.Tests;
 

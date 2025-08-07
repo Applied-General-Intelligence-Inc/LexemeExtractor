@@ -1,6 +1,6 @@
 using LexemeExtractor.Models;
 
-namespace LexemeExtractor.Parsing;
+namespace LexemeExtractor.ManualParsing;
 
 /// <summary>
 /// Position decoder implementing the full LexemeFileFormat.md specification
