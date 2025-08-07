@@ -14,6 +14,10 @@ internal class PositionPatternParser(string pattern, bool lineChanged = false, i
 
     public char PeekChar() => HasMore() ? _pattern[_position] : '\0';
 
+    public int GetCurrentPosition() => _position;
+
+    public int GetRemainingLength() => _pattern.Length - _position;
+
     public void ConsumeChar(char expected)
     {
         if (!HasMore() || _pattern[_position] != expected)

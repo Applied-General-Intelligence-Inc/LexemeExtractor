@@ -54,80 +54,79 @@ public class LexemeLineParser(string line)
             throw new FormatException($"Expected position encoding at position {_position} in line: {_line}");
 
         var start = _position;
-        var firstChar = _line[_position];
-        var iterationCount = 0;
-        const int maxIterations = 2; // Allow original pattern plus one more iteration
 
-        do
+        // Parse first pattern
+        ParseSinglePositionPattern();
+
+        // Check if we need to parse a second pattern (only for punctuation-based line increments)
+        if (_position < _line.Length && IsPunctuationLineIncrement(_line[start]))
         {
-            iterationCount++;
-            var parseAnother = false;
-
-            switch (firstChar)
-            {
-                case ':' or ';' or '@' or '|' or '_':
-                    // Single character position encodings
-                    _position++;
-                    break;
-
-                case '^' or '<' or '>':
-                    // Single character followed by column
-                    _position++;
-                    ConsumeColumn();
-                    break;
-
-                case '[' or ']':
-                    // Bracket followed by two columns
-                    _position++;
-                    ConsumeColumn();
-                    ConsumeColumn();
-                    break;
-
-                case '=':
-                    // Equals-based encoding - can be complex
-                    ConsumeEqualsPattern();
-                    break;
-
-                case '"' or '!' or '#' or '$' or '%' or '&' or '\'' or '(' or ')' or '*' or '+' or ',' or '-' or '.' or '/':
-                    // Punctuation-based line increment
-                    _position++;
-                    ConsumeColumn();
-
-                    // Check if we can parse another pattern (limited to one more time)
-                    if (iterationCount < maxIterations && _position < _line.Length)
-                    {
-                        firstChar = _line[_position];
-                        parseAnother = true;
-                    }
-                    break;
-
-                default:
-                    // Could be a number (absolute position) or letter (column encoding)
-                    switch (firstChar)
-                    {
-                        case var c when char.IsDigit(c):
-                            ConsumeNumber(); // Line number
-                            ConsumeColumn(); // Column
-                            ConsumeNumber(); // End line number
-                            ConsumeColumn(); // End column
-                            break;
-                        case var c when c is >= '\x41' and <= '\x7E':
-                            ConsumeColumn(); // Character-based column encoding (0x41-0x7E)
-                            break;
-                        default:
-                            throw new FormatException($"Unexpected position character '{firstChar}' at position {_position} in line: {_line}");
-                    }
-                    break;
-            }
-
-            // Continue only if parseAnother is true and we haven't exceeded max iterations
-            if (!parseAnother || iterationCount >= maxIterations)
-                break;
-
-        } while (true);
+            ParseSinglePositionPattern();
+        }
 
         return _line[start.._position];
     }
+
+    private void ParseSinglePositionPattern()
+    {
+        if (_position >= _line.Length)
+            return;
+
+        var currentChar = _line[_position];
+
+        switch (currentChar)
+        {
+            case ':' or ';' or '@' or '|' or '_':
+                // Single character position encodings
+                _position++;
+                break;
+
+            case '^' or '<' or '>':
+                // Single character followed by column
+                _position++;
+                ConsumeColumn();
+                break;
+
+            case '[' or ']':
+                // Bracket followed by two columns
+                _position++;
+                ConsumeColumn();
+                ConsumeColumn();
+                break;
+
+            case '=':
+                // Equals-based encoding - can be complex
+                ConsumeEqualsPattern();
+                break;
+
+            case '"' or '!' or '#' or '$' or '%' or '&' or '\'' or '(' or ')' or '*' or '+' or ',' or '-' or '.' or '/':
+                // Punctuation-based line increment
+                _position++;
+                ConsumeColumn();
+                break;
+
+            default:
+                // Could be a number (absolute position) or letter (column encoding)
+                switch (currentChar)
+                {
+                    case var c when char.IsDigit(c):
+                        ConsumeNumber(); // Line number
+                        ConsumeColumn(); // Column
+                        ConsumeNumber(); // End line number
+                        ConsumeColumn(); // End column
+                        break;
+                    case var c when c is >= '\x41' and <= '\x7E':
+                        ConsumeColumn(); // Character-based column encoding (0x41-0x7E)
+                        break;
+                    default:
+                        throw new FormatException($"Unexpected position character '{currentChar}' at position {_position} in line: {_line}");
+                }
+                break;
+        }
+    }
+
+    private static bool IsPunctuationLineIncrement(char c) =>
+        c is '"' or '!' or '#' or '$' or '%' or '&' or '\'' or '(' or ')' or '*' or '+' or ',' or '-' or '.' or '/';
 
     /// <summary>
     /// Parse optional content (remainder of line)

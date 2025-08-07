@@ -52,7 +52,7 @@ public class PositionDecoder
     {
         _lastPosition = position;
         _lastLine = position.Line;
-        _lastColumn = position.Column + position.Length ?? 0;
+        _lastColumn = position.Column + (position.Length ?? 0);
         return position;
     }
 
@@ -148,9 +148,65 @@ public class PositionDecoder
         var increment = GetPunctuationIncrement(punctuationChar);
         var newLine = _lastLine + increment;
 
-        return positionStr.Length > 1
-            ? new(newLine, DecodeColumnValue(positionStr[1..]))
-            : new(newLine, 1);
+        if (positionStr.Length == 1)
+        {
+            // Simple punctuation pattern: just line increment
+            return new(newLine, 1);
+        }
+
+        // Parse the remaining pattern after the punctuation character
+        var parser = new PositionPatternParser(positionStr[1..], true, 1);
+        var startColumn = parser.ParseColumn();
+
+        if (!parser.HasMore())
+        {
+            // Single pattern: punctuation + column
+            return new(newLine, startColumn);
+        }
+
+        // Complex pattern: punctuation + column + ending position
+        // Parse the ending position information
+        var endLine = newLine;
+        var endColumn = startColumn;
+        UpdateLastPosition(new(newLine, startColumn, endLine, endColumn));
+
+        // Check what type of ending pattern we have
+        var nextChar = parser.PeekChar();
+        if (nextChar is >= (char)0x21 and <= (char)0x2F)  // Another punctuation increment
+        {
+            // Punctuation-based ending: punctuation + column
+            var endPunctuationChar = nextChar;
+            parser.ConsumeChar(endPunctuationChar);
+            var endIncrement = GetPunctuationIncrement(endPunctuationChar);
+            endLine = _lastLine + endIncrement;
+            endColumn = parser.HasMore() ? parser.ParseColumn() : 1;
+        }
+        else if (nextChar == '=')
+        {
+            // Equals pattern ending: parse the remaining equals pattern
+            var remainingPattern = positionStr[(positionStr.Length - parser.GetRemainingLength())..];
+            var equalsPosition = DecodeEqualsPattern(remainingPattern);
+            endLine = equalsPosition.EffectiveEndLine;
+            endColumn = equalsPosition.EffectiveEndColumn;
+        }
+        else if (char.IsDigit(nextChar))
+        {
+            // Numeric ending: line and column
+            endLine = parser.ParseNumber();
+            endColumn = parser.ParseColumn();
+        }
+        else if (nextChar is >= '\x41' and <= '\x7E')
+        {
+            // Character-based column encoding for end column (same line)
+            endColumn = parser.ParseColumn();
+        }
+        else
+        {
+            // Other pattern types - parse as column (same line)
+            endColumn = parser.ParseColumn();
+        }
+
+        return new(newLine, startColumn, endLine, endColumn);
     }
 
     /// <summary>
@@ -186,28 +242,10 @@ public class PositionDecoder
     /// <summary>
     /// Get line increment for punctuation characters (codes #21-#2F)
     /// </summary>
-    private static int GetPunctuationIncrement(char punctuation)
-    {
-        return punctuation switch
-        {
-            '!' => 1,  // #21 - #20 = 1
-            '"' => 2,  // #22 - #20 = 2
-            '#' => 3,  // #23 - #20 = 3
-            '$' => 4,  // #24 - #20 = 4
-            '%' => 5,  // #25 - #20 = 5
-            '&' => 6,  // #26 - #20 = 6
-            '\'' => 7, // #27 - #20 = 7
-            '(' => 8,  // #28 - #20 = 8
-            ')' => 9,  // #29 - #20 = 9
-            '*' => 10, // #2A - #20 = 10
-            '+' => 11, // #2B - #20 = 11
-            ',' => 12, // #2C - #20 = 12
-            '-' => 13, // #2D - #20 = 13
-            '.' => 14, // #2E - #20 = 14
-            '/' => 15, // #2F - #20 = 15
-            _ => throw new FormatException($"Invalid punctuation character for line increment: '{punctuation}'")
-        };
-    }
+    private static int GetPunctuationIncrement(char punctuation) =>
+        punctuation is >= '\x21' and <= '\x2F'  // ! through /
+            ? punctuation - 0x20  // Subtract #20 to get increment (1-15)
+            : throw new FormatException($"Invalid punctuation character for line increment: '{punctuation}'");
 
     /// <summary>
     /// Decode column value from string (character in range 0x41-0x7E or number)
