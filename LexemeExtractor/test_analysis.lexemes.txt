@@ -1,0 +1,60 @@
+=== Lexeme File Decompressor Output ===
+Domain: COBOL~IBMEnterprise
+Filename: C:/temp/SRT1000.CBL
+Encoding: #b544a4bf
+
+Lexemes:
+--------
+ #6k(236) [] @ Line 1, Column 8-21
+ #50(180) [] @ Line 1, Column 21-28
+ #7(7) [] @ Line 1, Column 28
+ #s(28) [] @ Line 3, Column 8-18
+ #7(7) [] @ Line 3, Column 18
+ #ep(529) [D] @ Line 3, Column 19-25 = "SRT1000"
+ #7(7) [] @ Line 3, Column 25
+ #5s(208) [] @ Line 5, Column 8-19
+ #50(180) [] @ Line 5, Column 19-26
+ #7(7) [] @ Line 5, Column 26
+ #6v(247) [] @ Line 7, Column 8-20
+ #a2(362) [] @ Line 7, Column 20-26
+ #7(7) [] @ Line 7, Column 26
+ #1b(47) [] @ Line 9, Column 8-20
+ #7(7) [] @ Line 9, Column 20
+ #a4(364) [] @ Line 11, Column 12-18
+ #ep(529) [] @ Line 11, Column 18-24 = "RCTTRAN"
+ #23(75) [] @ Line 11, Column 25-30
+ #b9(405) [] @ Line 11, Column 31-32
+ #ep(529) [] @ Line 11, Column 32-38 = "RCTTRAN"
+ #7(7) [] @ Line 11, Column 38
+ #a4(364) [] @ Line 12, Column 49-54
+ #ep(529) [] @ Line 12, Column 54-60 = "OLDMAST"
+ #23(75) [] @ Line 12, Column 61-66
+ #b9(405) [] @ Line 12, Column 67-68
+ #ep(529) [] @ Line 12, Column 68-74 = "OLDMAST"
+ #7(7) [] @ Line 12, Column 74
+ #a4(364) [] @ Line 13, Column 85-90
+ #ep(529) [] @ Line 13, Column 90-96 = "NEWMAST"
+ #23(75) [] @ Line 13, Column 97-102
+ #b9(405) [] @ Line 13, Column 103-104
+ #ep(529) [] @ Line 13, Column 104-110 = "NEWMAST"
+ #1a(46) [] @ Line 14, Column 143-146
+ #ao(384) [] @ Line 14, Column 146-151
+ #70(252) [] @ Line 14, Column 152-153
+ #ep(529) [] @ Line 14, Column 153-171 = "NEWMAST-FILE-STATUS"
+ #7(7) [] @ Line 14, Column 171
+ #a4(364) [] @ Line 15, Column 182-187
+ #ep(529) [] @ Line 15, Column 187-193 = "ERRTRAN"
+ #23(75) [] @ Line 15, Column 194-199
+ #b9(405) [] @ Line 15, Column 200-201
+ #ep(529) [] @ Line 15, Column 201-207 = "ERRTRAN"
+ #1a(46) [] @ Line 16, Column 240-243
+ #ao(384) [] @ Line 16, Column 243-248
+ #70(252) [] @ Line 16, Column 249-250
+ #ep(529) [] @ Line 16, Column 250-268 = "ERRTRAN-FILE-STATUS"
+ #7(7) [] @ Line 16, Column 268
+ #a4(364) [] @ Line 17, Column 279-284
+ #ep(529) [] @ Line 17, Column 284-291 = "SORTWORK"
+ #23(75) [] @ Line 17, Column 291-296
+
+--------
+Total lexemes processed: 50

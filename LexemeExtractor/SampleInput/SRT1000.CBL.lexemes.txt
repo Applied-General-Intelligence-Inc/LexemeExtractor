@@ -1,0 +1,388 @@
+=== Lexeme File Decompressor Output ===
+Domain: COBOL~IBMEnterprise
+Filename: C:/temp/SRT1000.CBL
+Encoding: #b544a4bf
+
+Lexemes:
+--------
+ #6k(236) [] @ Line 1, Column 9-23
+ #50(180) [] @ Line 1, Column 24-32
+ #7(7) [] @ Line 1, Column 32
+ #s(28) [] @ Line 3, Column 9-19
+ #7(7) [] @ Line 3, Column 19
+ #ep(529) [D] @ Line 3, Column 21-28 = "SRT1000"
+ #7(7) [] @ Line 3, Column 28
+ #5s(208) [] @ Line 5, Column 9-20
+ #50(180) [] @ Line 5, Column 21-29
+ #7(7) [] @ Line 5, Column 29
+ #6v(247) [] @ Line 7, Column 9-21
+ #a2(362) [] @ Line 7, Column 22-29
+ #7(7) [] @ Line 7, Column 29
+ #1b(47) [] @ Line 9, Column 9-21
+ #7(7) [] @ Line 9, Column 21
+ #a4(364) [] @ Line 11, Column 13-19
+ #ep(529) [] @ Line 11, Column 20-27 = "RCTTRAN"
+ #23(75) [] @ Line 11, Column 29-35
+ #b9(405) [] @ Line 11, Column 1-2
+ #ep(529) [] @ Line 11, Column 3-10 = "RCTTRAN"
+ #7(7) [] @ Line 11, Column 10
+ #a4(364) [] @ Line 12, Column 22-28
+ #ep(529) [] @ Line 12, Column 29-36 = "OLDMAST"
+ #23(75) [] @ Line 12, Column 38-44
+ #b9(405) [] @ Line 12, Column 1-2
+ #ep(529) [] @ Line 12, Column 3-10 = "OLDMAST"
+ #7(7) [] @ Line 12, Column 10
+ #a4(364) [] @ Line 13, Column 22-28
+ #ep(529) [] @ Line 13, Column 29-36 = "NEWMAST"
+ #23(75) [] @ Line 13, Column 38-44
+ #b9(405) [] @ Line 13, Column 1-2
+ #ep(529) [] @ Line 13, Column 3-10 = "NEWMAST"
+ #1a(46) [] @ Line 14, Column 44-48
+ #ao(384) [] @ Line 14, Column 49-55
+ #70(252) [] @ Line 14, Column 1-2
+ #ep(529) [] @ Line 14, Column 3-22 = "NEWMAST-FILE-STATUS"
+ #7(7) [] @ Line 14, Column 22
+ #a4(364) [] @ Line 15, Column 34-40
+ #ep(529) [] @ Line 15, Column 41-48 = "ERRTRAN"
+ #23(75) [] @ Line 15, Column 50-56
+ #b9(405) [] @ Line 15, Column 1-2
+ #ep(529) [] @ Line 15, Column 3-10 = "ERRTRAN"
+ #1a(46) [] @ Line 16, Column 44-48
+ #ao(384) [] @ Line 16, Column 49-55
+ #70(252) [] @ Line 16, Column 1-2
+ #ep(529) [] @ Line 16, Column 3-22 = "ERRTRAN-FILE-STATUS"
+ #7(7) [] @ Line 16, Column 22
+ #a4(364) [] @ Line 17, Column 34-40
+ #ep(529) [] @ Line 17, Column 41-49 = "SORTWORK"
+ #23(75) [] @ Line 17, Column 50-56
+ #b9(405) [] @ Line 17, Column 1-2
+ #ep(529) [] @ Line 17, Column 3-11 = "SORTWK01"
+ #7(7) [] @ Line 17, Column 11
+ #37(115) [] @ Line 19, Column 9-13
+ #50(180) [] @ Line 19, Column 14-22
+ #7(7) [] @ Line 19, Column 22
+ #1a(46) [] @ Line 21, Column 9-13
+ #a2(362) [] @ Line 21, Column 14-21
+ #7(7) [] @ Line 21, Column 21
+ #62(218) [] @ Line 23, Column 9-40
+ #ep(529) [D] @ Line 23, Column 42-49 = "RCTTRAN"
+ #7(7) [] @ Line 23, Column 49
+ #ei(522) [] @ Line 25, Column 9-40 = " 1"
+ #ep(529) [D] @ Line 25, Column 42-60 = "TRANSACTION-RECORD"
+ #t(29) [] @ Line 25, Column 66-69
+ #f4(544) [] @ Line 25, Column 70-75 = "X(23)"
+ #7(7) [] @ Line 25, Column 75
+ #62(218) [] @ Line 27, Column 9-40
+ #ep(529) [D] @ Line 27, Column 42-49 = "OLDMAST"
+ #7(7) [] @ Line 27, Column 49
+ #ei(522) [] @ Line 29, Column 9-40 = " 1"
+ #ep(529) [D] @ Line 29, Column 42-59 = "OLD-MASTER-RECORD"
+ #t(29) [] @ Line 29, Column 66-69
+ #f4(544) [] @ Line 29, Column 70-75 = "X(70)"
+ #7(7) [] @ Line 29, Column 75
+ #62(218) [] @ Line 31, Column 9-40
+ #ep(529) [D] @ Line 31, Column 42-49 = "NEWMAST"
+ #7(7) [] @ Line 31, Column 49
+ #ei(522) [] @ Line 33, Column 9-40 = " 1"
+ #ep(529) [D] @ Line 33, Column 42-59 = "NEW-MASTER-RECORD"
+ #t(29) [] @ Line 33, Column 66-69
+ #f4(544) [] @ Line 33, Column 70-75 = "X(70)"
+ #7(7) [] @ Line 33, Column 75
+ #62(218) [] @ Line 35, Column 9-40
+ #ep(529) [D] @ Line 35, Column 42-49 = "ERRTRAN"
+ #7(7) [] @ Line 35, Column 49
+ #ei(522) [] @ Line 37, Column 9-40 = " 1"
+ #ep(529) [D] @ Line 37, Column 42-59 = "ERROR-TRANSACTION"
+ #t(29) [] @ Line 37, Column 66-69
+ #f4(544) [] @ Line 37, Column 70-75 = "X(23)"
+ #7(7) [] @ Line 37, Column 75
+ #a0(360) [] @ Line 39, Column 9-40
+ #ep(529) [] @ Line 39, Column 42-50 = "SORTWORK"
+ #7(7) [] @ Line 39, Column 50
+ #ei(522) [] @ Line 41, Column 9-40 = " 1"
+ #ep(529) [D] @ Line 41, Column 42-56 = "SORT-WORK-AREA"
+ #7(7) [] @ Line 41, Column 56
+ #ei(522) [] @ Line 42, Column 68-70 = " 5"
+ #ep(529) [D] @ Line 42, Column 72-82 = "SW-ITEM-NO"
+ #t(29) [] @ Line 42, Column 92-95
+ #f4(544) [] @ Line 42, Column 96-100 = "X(5)"
+ #7(7) [] @ Line 42, Column 100
+ #ei(522) [] @ Line 43, Column 112-114 = " 5"
+ #63(219) [] @ Line 43, Column 116-122
+ #t(29) [] @ Line 43, Column 136-139
+ #f4(544) [] @ Line 43, Column 140-145 = "X(18)"
+ #7(7) [] @ Line 43, Column 145
+ #bs(424) [] @ Line 45, Column 9-24
+ #a2(362) [] @ Line 45, Column 25-32
+ #7(7) [] @ Line 45, Column 32
+ #ei(522) [] @ Line 47, Column 9-40 = " 1"
+ #ep(529) [D] @ Line 47, Column 42-50 = "SWITCHES"
+ #7(7) [] @ Line 47, Column 50
+ #ei(522) [] @ Line 48, Column 62-64 = " 5"
+ #ep(529) [D] @ Line 48, Column 66-88 = "TRANSACTION-EOF-SWITCH"
+ #t(29) [] @ Line 48, Column 98-101
+ #f4(544) [] @ Line 48, Column 1 = "X"
+program_name(IDENTIFIER) #bm(418) [] @ Line 48, Column 4-9
+ #er(531) [] @ Line 48, Column 10-13 = "N"
+ #7(7) [] @ Line 48, Column 13
+ #ei(522) [] @ Line 49, Column 29-31 = " 88"
+ #ep(529) [D] @ Line 49, Column 33-48 = "TRANSACTION-EOF"
+program_name(IDENTIFIER) #bm(418) [] @ Line 49, Column 69-74
+ #er(531) [] @ Line 49, Column 75-78 = "Y"
+ #7(7) [] @ Line 49, Column 78
+ #ei(522) [] @ Line 50, Column 90-92 = " 5"
+ #ep(529) [D] @ Line 50, Column 94-118 = "VALID-TRANSACTION-SWITCH"
+ #t(29) [] @ Line 50, Column 126-129
+ #f4(544) [] @ Line 50, Column 1 = "X"
+program_name(IDENTIFIER) #bm(418) [] @ Line 50, Column 4-9
+ #er(531) [] @ Line 50, Column 10-13 = "Y"
+ #7(7) [] @ Line 50, Column 13
+ #ei(522) [] @ Line 51, Column 29-31 = " 88"
+ #ep(529) [D] @ Line 51, Column 33-50 = "VALID-TRANSACTION"
+program_name(IDENTIFIER) #bm(418) [] @ Line 51, Column 69-74
+ #er(531) [] @ Line 51, Column 75-78 = "Y"
+ #7(7) [] @ Line 51, Column 78
+ #ei(522) [] @ Line 52, Column 90-92 = " 5"
+ #ep(529) [D] @ Line 52, Column 94-116 = "FIRST-EXECUTION-SWITCH"
+ #t(29) [] @ Line 52, Column 126-129
+ #f4(544) [] @ Line 52, Column 1 = "X"
+program_name(IDENTIFIER) #bm(418) [] @ Line 52, Column 4-9
+ #er(531) [] @ Line 52, Column 10-13 = "Y"
+ #7(7) [] @ Line 52, Column 13
+ #ei(522) [] @ Line 53, Column 29-31 = " 88"
+ #ep(529) [D] @ Line 53, Column 33-48 = "FIRST-EXECUTION"
+program_name(IDENTIFIER) #bm(418) [] @ Line 53, Column 69-74
+ #er(531) [] @ Line 53, Column 75-78 = "Y"
+ #7(7) [] @ Line 53, Column 78
+ #ei(522) [] @ Line 54, Column 90-92 = " 5"
+ #ep(529) [D] @ Line 54, Column 94-128 = "ALL-RECORDS-PROCESSED-SWITCH"
+ #t(29) [] @ Line 54, Column 132-135
+ #f4(544) [] @ Line 54, Column 1 = "X"
+program_name(IDENTIFIER) #bm(418) [] @ Line 54, Column 4-9
+ #er(531) [] @ Line 54, Column 10-13 = "N"
+ #7(7) [] @ Line 54, Column 13
+ #ei(522) [] @ Line 55, Column 29-31 = " 88"
+ #ep(529) [D] @ Line 55, Column 33-54 = "ALL-RECORDS-PROCESSED"
+program_name(IDENTIFIER) #bm(418) [] @ Line 55, Column 69-74
+ #er(531) [] @ Line 55, Column 75-78 = "Y"
+ #7(7) [] @ Line 55, Column 78
+ #ei(522) [] @ Line 57, Column 9-40 = " 1"
+ #ep(529) [D] @ Line 57, Column 42-60 = "FILE-STATUS-FIELDS"
+ #7(7) [] @ Line 57, Column 60
+ #ei(522) [] @ Line 58, Column 72-74 = " 5"
+ #ep(529) [D] @ Line 58, Column 76-95 = "NEWMAST-FILE-STATUS"
+ #t(29) [] @ Line 58, Column 100-103
+ #f4(544) [] @ Line 58, Column 1-2 = "XX"
+ #7(7) [] @ Line 58, Column 2
+ #ei(522) [] @ Line 59, Column 18-20 = " 88"
+ #ep(529) [D] @ Line 59, Column 22-40 = "NEWMAST-SUCCESSFUL"
+program_name(IDENTIFIER) #bm(418) [] @ Line 59, Column 50-55
+ #er(531) [] @ Line 59, Column 56-60 = "00"
+ #7(7) [] @ Line 59, Column 60
+ #ei(522) [] @ Line 60, Column 72-74 = " 5"
+ #ep(529) [D] @ Line 60, Column 76-95 = "ERRTRAN-FILE-STATUS"
+ #t(29) [] @ Line 60, Column 100-103
+ #f4(544) [] @ Line 60, Column 1-2 = "XX"
+ #7(7) [] @ Line 60, Column 2
+ #ei(522) [] @ Line 61, Column 18-20 = " 88"
+ #ep(529) [D] @ Line 61, Column 22-40 = "ERRTRAN-SUCCESSFUL"
+program_name(IDENTIFIER) #bm(418) [] @ Line 61, Column 50-55
+ #er(531) [] @ Line 61, Column 56-60 = "00"
+ #7(7) [] @ Line 61, Column 60
+ #ei(522) [] @ Line 63, Column 9-40 = " 1"
+ #ep(529) [D] @ Line 63, Column 42-61 = "RECEIPT-TRANSACTION"
+ #7(7) [] @ Line 63, Column 61
+ #ei(522) [] @ Line 64, Column 73-75 = " 5"
+ #ep(529) [D] @ Line 64, Column 77-87 = "RT-ITEM-NO"
+ #t(29) [] @ Line 64, Column 101-104
+ #f4(544) [] @ Line 64, Column 105-109 = "X(5)"
+ #7(7) [] @ Line 64, Column 109
+ #ei(522) [] @ Line 65, Column 121-123 = " 5"
+ #ep(529) [D] @ Line 65, Column 125-137 = "RT-VENDOR-NO"
+ #t(29) [] @ Line 65, Column 149-152
+ #f4(544) [] @ Line 65, Column 153-157 = "X(5)"
+ #7(7) [] @ Line 65, Column 157
+ #ei(522) [] @ Line 66, Column 169-171 = " 5"
+ #ep(529) [D] @ Line 66, Column 173-188 = "RT-RECEIPT-DATE"
+ #t(29) [] @ Line 66, Column 197-200
+ #f4(544) [] @ Line 66, Column 201-205 = "X(8)"
+ #7(7) [] @ Line 66, Column 205
+ #ei(522) [] @ Line 67, Column 217-219 = " 5"
+ #ep(529) [D] @ Line 67, Column 221-242 = "RT-RECEIPT-QUANTITY-X"
+ #t(29) [] @ Line 67, Column 245-248
+ #f4(544) [] @ Line 67, Column 249-253 = "X(5)"
+ #7(7) [] @ Line 67, Column 253
+ #ei(522) [] @ Line 68, Column 265-267 = " 5"
+ #ep(529) [D] @ Line 68, Column 269-288 = "RT-RECEIPT-QUANTITY"
+ #97(331) [] @ Line 68, Column 289-298
+ #ep(529) [] @ Line 68, Column 299-320 = "RT-RECEIPT-QUANTITY-X"
+ #t(29) [] @ Line 69, Column 366-369
+ #fb(551) [] @ Line 69, Column 370-374 = "9(5)"
+ #7(7) [] @ Line 69, Column 374
+ #ei(522) [] @ Line 71, Column 9-40 = " 1"
+ #ep(529) [D] @ Line 71, Column 42-65 = "INVENTORY-MASTER-RECORD"
+ #7(7) [] @ Line 71, Column 65
+ #ei(522) [] @ Line 72, Column 77-79 = " 5"
+ #ep(529) [D] @ Line 72, Column 81-91 = "IM-ITEM-NO"
+ #t(29) [] @ Line 72, Column 105-108
+ #f4(544) [] @ Line 72, Column 109-113 = "X(5)"
+ #7(7) [] @ Line 72, Column 113
+ #ei(522) [] @ Line 73, Column 125-127 = " 5"
+ #ep(529) [D] @ Line 73, Column 129-148 = "IM-DESCRIPTIVE-DATA"
+ #7(7) [] @ Line 73, Column 148
+ #ei(522) [] @ Line 74, Column 164-166 = " 10"
+ #ep(529) [D] @ Line 74, Column 168-180 = "IM-ITEM-DESC"
+ #t(29) [] @ Line 74, Column 188-191
+ #f4(544) [] @ Line 74, Column 192-197 = "X(40)"
+ #7(7) [] @ Line 74, Column 197
+ #ei(522) [] @ Line 75, Column 213-215 = " 10"
+ #ep(529) [D] @ Line 75, Column 217-229 = "IM-UNIT-COST"
+ #t(29) [] @ Line 75, Column 237-240
+ #fb(551) [] @ Line 75, Column 241-249 = "S9(3)V99"
+ #7(7) [] @ Line 75, Column 249
+ #ei(522) [] @ Line 76, Column 265-267 = " 10"
+ #ep(529) [D] @ Line 76, Column 269-282 = "IM-UNIT-PRICE"
+ #t(29) [] @ Line 76, Column 289-292
+ #fb(551) [] @ Line 76, Column 293-301 = "S9(3)V99"
+ #7(7) [] @ Line 76, Column 301
+ #ei(522) [] @ Line 77, Column 313-315 = " 5"
+ #ep(529) [D] @ Line 77, Column 317-334 = "IM-INVENTORY-DATA"
+ #7(7) [] @ Line 77, Column 334
+ #ei(522) [] @ Line 78, Column 350-352 = " 10"
+ #ep(529) [D] @ Line 78, Column 354-370 = "IM-REORDER-POINT"
+ #t(29) [] @ Line 78, Column 374-377
+ #fb(551) [] @ Line 78, Column 378-383 = "S9(5)"
+ #7(7) [] @ Line 78, Column 383
+ #ei(522) [] @ Line 79, Column 399-401 = " 10"
+ #ep(529) [D] @ Line 79, Column 403-413 = "IM-ON-HAND"
+ #t(29) [] @ Line 79, Column 423-426
+ #fb(551) [] @ Line 79, Column 427-432 = "S9(5)"
+ #7(7) [] @ Line 79, Column 432
+ #ei(522) [] @ Line 80, Column 448-450 = " 10"
+ #ep(529) [D] @ Line 80, Column 452-463 = "IM-ON-ORDER"
+ #t(29) [] @ Line 80, Column 472-475
+ #fb(551) [] @ Line 80, Column 476-481 = "S9(5)"
+ #7(7) [] @ Line 80, Column 481
+ #8v(319) [] @ Line 82, Column 9-18
+ #50(180) [] @ Line 82, Column 19-27
+ #7(7) [] @ Line 82, Column 27
+ #ep(529) [D] @ Line 84, Column 9-34 = "000-UPDATE-INVENTORY-FILE"
+ #7(7) [] @ Line 84, Column 34
+ #8a(298) [] @ Line 86, Column 13-17
+ #6u(246) [] @ Line 86, Column 18-23
+ #ep(529) [] @ Line 86, Column 25-32 = "OLDMAST"
+ #ep(529) [] @ Line 87, Column 56-63 = "RCTTRAN"
+ #8g(304) [] @ Line 88, Column 80-86
+ #ep(529) [] @ Line 88, Column 87-94 = "NEWMAST"
+ #ep(529) [] @ Line 89, Column 118-125 = "ERRTRAN"
+ #7(7) [] @ Line 89, Column 125
+ #ac(372) [] @ Line 90, Column 137-141
+ #ep(529) [] @ Line 90, Column 142-150 = "SORTWORK"
+ #89(297) [] @ Line 91, Column 166-168
+ #22(74) [] @ Line 91, Column 169-178
+ #73(255) [] @ Line 91, Column 179-182
+ #ep(529) [] @ Line 91, Column 183-193 = "SW-ITEM-NO"
+ #6u(246) [] @ Line 92, Column 209-214
+ #8v(319) [] @ Line 92, Column 215-224
+ #70(252) [] @ Line 92, Column 1-2
+ #ep(529) [] @ Line 92, Column 3-38 = "100-EDIT-RECEIPT-TRANSACTIONS"
+ #8g(304) [] @ Line 93, Column 54-60
+ #8v(319) [] @ Line 93, Column 61-70
+ #70(252) [] @ Line 93, Column 1-2
+ #ep(529) [] @ Line 93, Column 3-37 = "400-UPDATE-INVENTORY-RECORDS"
+ #7(7) [] @ Line 93, Column 37
+ #2m(94) [] @ Line 94, Column 49-54
+ #ep(529) [] @ Line 94, Column 55-62 = "RCTTRAN"
+ #ep(529) [] @ Line 95, Column 80-87 = "OLDMAST"
+ #ep(529) [] @ Line 96, Column 105-112 = "NEWMAST"
+ #ep(529) [] @ Line 97, Column 130-137 = "ERRTRAN"
+ #7(7) [] @ Line 97, Column 137
+ #aq(386) [] @ Line 98, Column 149-153
+ #9y(358) [] @ Line 98, Column 154-157
+ #7(7) [] @ Line 98, Column 157
+ #ep(529) [D] @ Line 100, Column 9-44 = "100-EDIT-RECEIPT-TRANSACTIONS"
+ #7(7) [] @ Line 100, Column 44
+ #8m(310) [] @ Line 102, Column 13-20
+ #ep(529) [] @ Line 102, Column 21-42 = "200-EDIT-RECEIPT-TRAN"
+ #bg(412) [] @ Line 103, Column 58-63
+ #ep(529) [] @ Line 103, Column 64-79 = "TRANSACTION-EOF"
+ #7(7) [] @ Line 103, Column 79
+ #ep(529) [D] @ Line 105, Column 9-30 = "200-EDIT-RECEIPT-TRAN"
+ #7(7) [] @ Line 105, Column 30
+ #8m(310) [] @ Line 107, Column 13-20
+ #ep(529) [] @ Line 107, Column 21-55 = "210-READ-RECEIPT-TRANSACTION"
+ #7(7) [] @ Line 107, Column 55
+ #6l(237) [] @ Line 108, Column 67-69
+ #7x(285) [] @ Line 108, Column 70-73
+ #ep(529) [] @ Line 108, Column 74-89 = "TRANSACTION-EOF"
+ #8m(310) [] @ Line 109, Column 105-112
+ #ep(529) [] @ Line 109, Column 113-146 = "220-EDIT-TRANSACTION-FIELDS"
+ #6l(237) [] @ Line 110, Column 162-164
+ #ep(529) [] @ Line 110, Column 165-182 = "VALID-TRANSACTION"
+ #8m(310) [] @ Line 111, Column 202-209
+ #ep(529) [] @ Line 111, Column 210-245 = "230-RELEASE-VALID-TRANSACTION"
+ #55(185) [] @ Line 112, Column 261-265
+ #8m(310) [] @ Line 113, Column 285-292
+ #ep(529) [] @ Line 113, Column 293-326 = "240-WRITE-ERROR-TRANSACTION"
+ #7(7) [] @ Line 113, Column 326
+ #ep(529) [D] @ Line 115, Column 9-43 = "210-READ-RECEIPT-TRANSACTION"
+ #7(7) [] @ Line 115, Column 43
+ #94(328) [] @ Line 117, Column 13-17
+ #ep(529) [] @ Line 117, Column 18-25 = "RCTTRAN"
+ #6x(249) [] @ Line 117, Column 26-30
+ #ep(529) [C] @ Line 117, Column 31-50 = "RECEIPT-TRANSACTION"
+ #24(76) [] @ Line 118, Column 66-68
+ #57(187) [] @ Line 118, Column 69-72
+ #a9(369) [] @ Line 119, Column 92-95
+ #ep(529) [B] @ Line 119, Column 96-111 = "TRANSACTION-EOF"
+ #b9(405) [] @ Line 119, Column 1-2
+ #1k(56) [] @ Line 119, Column 3-7
+ #7(7) [] @ Line 119, Column 7
+ #ep(529) [D] @ Line 121, Column 9-42 = "220-EDIT-TRANSACTION-FIELDS"
+ #7(7) [] @ Line 121, Column 42
+ #a9(369) [] @ Line 123, Column 13-16
+ #ep(529) [B] @ Line 123, Column 17-34 = "VALID-TRANSACTION"
+ #b9(405) [] @ Line 123, Column 1-2
+ #1k(56) [] @ Line 123, Column 3-7
+ #7(7) [] @ Line 123, Column 7
+ #6l(237) [] @ Line 124, Column 19-21
+ #ep(529) [] @ Line 124, Column 28-38 = "RT-ITEM-NO"
+ #7x(285) [] @ Line 124, Column 39-42
+ #81(289) [] @ Line 124, Column 43-50
+ #8c(300) [] @ Line 125, Column 68-70
+ #ep(529) [] @ Line 125, Column 71-83 = "RT-VENDOR-NO"
+ #7x(285) [] @ Line 125, Column 84-87
+ #81(289) [] @ Line 125, Column 88-95
+ #8c(300) [] @ Line 126, Column 113-115
+ #ep(529) [] @ Line 126, Column 116-137 = "RT-RECEIPT-QUANTITY-X"
+ #7x(285) [] @ Line 126, Column 138-141
+ #81(289) [] @ Line 126, Column 142-149
+ #7p(277) [] @ Line 127, Column 165-169
+ #er(531) [] @ Line 127, Column 170-173 = "N"
+ #b9(405) [] @ Line 127, Column 1-2
+ #ep(529) [B] @ Line 127, Column 3-27 = "VALID-TRANSACTION-SWITCH"
+ #7(7) [] @ Line 127, Column 27
+ #ep(529) [D] @ Line 129, Column 9-44 = "230-RELEASE-VALID-TRANSACTION"
+ #7(7) [] @ Line 129, Column 44
+ #9c(336) [] @ Line 131, Column 13-20
+ #ep(529) [] @ Line 131, Column 21-35 = "SORT-WORK-AREA"
+ #69(225) [] @ Line 131, Column 36-40
+ #ep(529) [] @ Line 131, Column 41-60 = "RECEIPT-TRANSACTION"
+ #7(7) [] @ Line 131, Column 60
+ #ep(529) [D] @ Line 133, Column 9-42 = "240-WRITE-ERROR-TRANSACTION"
+ #7(7) [] @ Line 133, Column 42
+ #bt(425) [] @ Line 135, Column 13-18
+ #ep(529) [] @ Line 135, Column 19-36 = "ERROR-TRANSACTION"
+ #69(225) [] @ Line 135, Column 37-41
+ #ep(529) [] @ Line 135, Column 42-61 = "RECEIPT-TRANSACTION"
+ #7(7) [] @ Line 135, Column 61
+ #6l(237) [] @ Line 136, Column 73-75
+ #7x(285) [] @ Line 136, Column 76-79
+ #ep(529) [] @ Line 136, Column 80-98 = "ERRTRAN-SUCCESSFUL"
+ #4y(178) [] @ Line 137, Column 114-121
+ #er(531) [] @ Line 137, Column 122-169 = "WRITE ERROR ON ERRTRAN FOR ITEM NUMBER"
+ #ep(529) [] @ Line 138, Column 189-199 = "RT-ITEM-NO"
+ #4y(178) [] @ Line 139, Column 215-222
+ #er(531) [] @ Line 139, Column 223-245 = "FILE STATUS CODE IS"
+ #ep(529) [] @ Line 139, Column 246-265 = "ERRTRAN-FILE-STATUS"
+ #7(7) [] @ Line 139, Column 265
