@@ -15,6 +15,11 @@
       <PackageReference Include="Superpower" Version="3.1.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Tests/TestFiles/**/*.cs" />
+      <None Include="Tests/TestFiles/**/*" />
+    </ItemGroup>
+
 
 
 </Project>
