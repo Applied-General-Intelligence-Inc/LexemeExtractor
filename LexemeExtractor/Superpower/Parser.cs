@@ -33,7 +33,7 @@ public abstract record Position
 public record SamePosition(int Width) : Position
 {
     public override AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition) =>
-        new AbsolutePosition(currentPosition.StartLine, currentPosition.EndColumn + 1, currentPosition.EndLine, currentPosition.EndColumn + Width);
+        new AbsolutePosition(currentPosition.StartLine, currentPosition.EndColumn, currentPosition.EndLine, currentPosition.EndColumn + Width);
 }
 
 public record SameLineEndColumn(Column EndColumn) : Position
