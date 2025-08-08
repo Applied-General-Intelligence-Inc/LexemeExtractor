@@ -64,9 +64,9 @@ public record NextLineRange(Column StartColumn, Column EndColumn) : Position
         // When moving to next line, create a position context with column reset to initial value
         var nextLine = currentPosition.StartLine + 1;
         var nextLinePosition = new AbsolutePosition(nextLine, Models.PositionConstants.InitialColumnNumber, nextLine, Models.PositionConstants.InitialColumnNumber);
-        var startCol = StartColumn.GetAbsoluteColumn(nextLinePosition);
-        var endCol = EndColumn.GetAbsoluteColumn(nextLinePosition);
-        return new AbsolutePosition(nextLine, startCol, nextLine, endCol);
+        nextLinePosition.StartColumn = StartColumn.GetAbsoluteColumn(nextLinePosition);
+        nextLinePosition.EndColumn = EndColumn.GetAbsoluteColumn(nextLinePosition);
+        return nextLinePosition;
     }
 }
 
@@ -74,9 +74,10 @@ public record FullRange(StartPosition Start, EndPosition End) : Position
 {
     public override AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition)
     {
-        var startPos = Start.Position.GetAbsolutePosition(currentPosition);
-        var endPos = End.Position.GetAbsolutePosition(currentPosition);
-        return new AbsolutePosition(startPos.LineNumber, startPos.Column, endPos.LineNumber, endPos.Column);
+        var newPosition = new AbsolutePosition(currentPosition.StartLine, currentPosition.StartColumn, currentPosition.EndLine, currentPosition.EndColumn);
+        (newPosition.StartLine, newPosition.StartColumn) = Start.Position.GetAbsolutePosition(newPosition);
+        (newPosition.EndLine, newPosition.EndColumn) = End.Position.GetAbsolutePosition(newPosition);
+        return newPosition;
     }
 }
 
