@@ -74,7 +74,13 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore ${{ env.PROJECT_PATH }}
 
-    - name: Build and publish
+    - name: Build and publish (Windows)
+      if: matrix.os == 'windows'
+      run: |
+        dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --runtime ${{ matrix.rid }} --self-contained true --output ./publish/${{ matrix.artifact_name }}
+
+    - name: Build and publish (Unix)
+      if: matrix.os != 'windows'
       run: |
         dotnet publish ${{ env.PROJECT_PATH }} \
           --configuration Release \
