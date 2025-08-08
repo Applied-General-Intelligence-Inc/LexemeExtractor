@@ -6,12 +6,22 @@ namespace LexemeExtractor.Models;
 public static class PositionConstants
 {
     /// <summary>
-    /// Initial line number for new files and position contexts (1-based)
+    /// Initial start line number for new files and position contexts
     /// </summary>
-    public const int InitialLineNumber = 0;
-    
+    public const int InitialStartLine = 0;
+
     /// <summary>
-    /// Initial column number for new lines and position contexts (1-based)
+    /// Initial start column number for new lines and position contexts
     /// </summary>
-    public const int InitialColumnNumber = 1;
+    public const int InitialStartColumn = 1;
+
+    /// <summary>
+    /// Initial end line number for new files and position contexts
+    /// </summary>
+    public const int InitialEndLine = 0;
+
+    /// <summary>
+    /// Initial end column number for new lines and position contexts
+    /// </summary>
+    public const int InitialEndColumn = 1;
 }

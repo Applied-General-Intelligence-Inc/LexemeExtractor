@@ -53,8 +53,12 @@ public record SameLineStartColumn(Column StartColumn, int Width) : Position
 
 public record SameLineRange(Column StartColumn, Column EndColumn) : Position
 {
-    public override AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition) =>
-        new AbsolutePosition(currentPosition.StartLine, StartColumn.GetAbsoluteColumn(currentPosition), currentPosition.StartLine, EndColumn.GetAbsoluteColumn(currentPosition));
+    public override AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition)
+    {
+        var nextPosition = new AbsolutePosition(currentPosition.StartLine, StartColumn.GetAbsoluteColumn(currentPosition), currentPosition.StartLine, currentPosition.EndColumn);
+        nextPosition.EndColumn = EndColumn.GetAbsoluteColumn(nextPosition);
+        return nextPosition;
+    }
 }
 
 public record NextLineRange(Column StartColumn, Column EndColumn) : Position
@@ -63,7 +67,7 @@ public record NextLineRange(Column StartColumn, Column EndColumn) : Position
     {
         // When moving to next line, create a position context with column reset to initial value
         var nextLine = currentPosition.StartLine + 1;
-        var nextLinePosition = new AbsolutePosition(nextLine, Models.PositionConstants.InitialColumnNumber, nextLine, Models.PositionConstants.InitialColumnNumber);
+        var nextLinePosition = new AbsolutePosition(nextLine, Models.PositionConstants.InitialStartColumn, nextLine, Models.PositionConstants.InitialEndColumn);
         nextLinePosition.StartColumn = StartColumn.GetAbsoluteColumn(nextLinePosition);
         nextLinePosition.EndColumn = EndColumn.GetAbsoluteColumn(nextLinePosition);
         return nextLinePosition;
@@ -76,6 +80,11 @@ public record FullRange(StartPosition Start, EndPosition End) : Position
     {
         var newPosition = new AbsolutePosition(currentPosition.StartLine, currentPosition.StartColumn, currentPosition.EndLine, currentPosition.EndColumn);
         (newPosition.StartLine, newPosition.StartColumn) = Start.Position.GetAbsolutePosition(newPosition);
+        if (newPosition.StartLine != currentPosition.StartLine)
+        {
+            newPosition.EndColumn = Models.PositionConstants.InitialEndColumn;
+        }
+        
         (newPosition.EndLine, newPosition.EndColumn) = End.Position.GetAbsolutePosition(newPosition);
         return newPosition;
     }
@@ -93,7 +102,7 @@ public record AbsoluteLinePosition(int LineNumber, Column Column) : PositionBase
     {
         // When line changes, create a position context with column reset to initial value
         var positionContext = LineNumber != currentPosition.StartLine
-            ? new AbsolutePosition(LineNumber, Models.PositionConstants.InitialColumnNumber, LineNumber, Models.PositionConstants.InitialColumnNumber)
+            ? new AbsolutePosition(LineNumber, Models.PositionConstants.InitialStartColumn, LineNumber, Models.PositionConstants.InitialEndColumn)
             : currentPosition;
         return (LineNumber, Column.GetAbsoluteColumn(positionContext));
     }
@@ -115,7 +124,7 @@ public record PunctuationLinePosition(char Punctuation, Column Column) : Positio
         var lineNumber = currentPosition.StartLine + increment;
 
         // When line changes, create a position context with column reset to initial value
-        var newLinePosition = new AbsolutePosition(lineNumber, Models.PositionConstants.InitialColumnNumber, lineNumber, Models.PositionConstants.InitialColumnNumber);
+        var newLinePosition = new AbsolutePosition(lineNumber, Models.PositionConstants.InitialStartColumn, lineNumber, Models.PositionConstants.InitialEndColumn);
         return (lineNumber, Column.GetAbsoluteColumn(newLinePosition));
     }
 }
@@ -360,7 +369,7 @@ public static class CompressedLexemeParser
         var header = new FileHeader(superpowerFile.Domain, superpowerFile.FileSourceInformation, superpowerFile.Encoding);
 
         // Track current position state while converting lexemes
-        var currentPosition = new AbsolutePosition(Models.PositionConstants.InitialLineNumber, Models.PositionConstants.InitialColumnNumber, Models.PositionConstants.InitialLineNumber, Models.PositionConstants.InitialColumnNumber);
+        var currentPosition = new AbsolutePosition(Models.PositionConstants.InitialStartLine, Models.PositionConstants.InitialStartColumn, Models.PositionConstants.InitialEndLine, Models.PositionConstants.InitialEndColumn);
         var modelLexemes = superpowerFile.Lexemes.Select(superpowerLexeme => ConvertToModelLexeme(superpowerLexeme, nameDefinitions, ref currentPosition)).ToList();
 
         return new Models.LexemeFile(header, modelLexemes);
