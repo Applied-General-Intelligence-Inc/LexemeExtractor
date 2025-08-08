@@ -1,6 +1,7 @@
 # LexemeExtractor File Format Specification
 
 ## Description
+Note: This is the original documentation that describes the Semantic Designs tool that serializes compressed lexemes. In this document, "This Tool" refers to that tool, not the tool in this repository. This is our input format.
 
 This tool processes a list of files to produce their lexemes. For a given path/file, the lexemes are placed in path/file.lexemes. The first line contains the domain/dialect for the file. The second line contains the originating filename; this probably is unnecessary. All further lines contain lexemes, one per line. The format of the lexeme information is as follows:
 
