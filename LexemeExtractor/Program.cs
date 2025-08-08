@@ -6,32 +6,49 @@ using LexemeExtractor.OutputFormatters;
 using static LexemeExtractor.Superpower.CompressedLexemeParser;
 
 // Parse command line arguments
-var (globPattern, outputFormat, useStdin) = ParseArguments(args);
+var parseResult = ParseArguments(args);
 
-if (globPattern == null && !useStdin)
+// Handle special cases first
+if (parseResult.ShowHelp)
 {
-    Console.WriteLine("Usage: LexemeExtractor <glob-pattern> [--format <format>]");
-    Console.WriteLine("       LexemeExtractor [--format <format>] < input.lexemes");
-    Console.WriteLine("Formats: text (default), json, csv, xml");
-    Console.WriteLine("Example: LexemeExtractor \"*.lexemes\" --format json");
-    Console.WriteLine("Example: cat file.lexemes | LexemeExtractor --format csv");
+    ShowHelp();
+    return 0;
+}
+
+if (parseResult.ShowVersion)
+{
+    ShowVersion();
+    return 0;
+}
+
+if (parseResult.HasError)
+{
+    Console.Error.WriteLine($"Error: {parseResult.ErrorMessage}");
+    Console.Error.WriteLine("Use --help for usage information.");
+    return 1;
+}
+
+if (parseResult.GlobPattern == null && !parseResult.UseStdin)
+{
+    Console.Error.WriteLine("Error: No input specified.");
+    Console.Error.WriteLine("Use --help for usage information.");
     return 1;
 }
 
 try
 {
-    if (useStdin)
+    if (parseResult.UseStdin)
     {
         // Process input from stdin
-        ProcessStdin(outputFormat);
+        ProcessStdin(parseResult.OutputFormat);
     }
     else
     {
         // Expand ~ to home directory if present using pattern matching
-        var expandedPattern = globPattern switch
+        var expandedPattern = parseResult.GlobPattern switch
         {
             ['~', '/', .. var rest] => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), rest),
-            _ => globPattern
+            _ => parseResult.GlobPattern
         };
 
         // Separate directory path from pattern
@@ -47,14 +64,14 @@ try
 
         if (matchingFiles.Length == 0)
         {
-            Console.WriteLine($"No files found matching pattern: {globPattern}");
+            Console.WriteLine($"No files found matching pattern: {parseResult.GlobPattern}");
             return 0;
         }
 
         // Process each matching file
         foreach (var filePath in matchingFiles)
         {
-            ProcessFile(filePath, outputFormat);
+            ProcessFile(filePath, parseResult.OutputFormat);
         }
     }
 }
@@ -150,47 +167,119 @@ static void ProcessStdin(string outputFormat)
     }
 }
 
-static (string? globPattern, string outputFormat, bool useStdin) ParseArguments(string[] args)
+static void ShowHelp()
 {
-    string? globPattern = null;
-    var outputFormat = "text"; // Default format
-    var useStdin = false;
+    Console.WriteLine("LexemeExtractor - Process lexeme files and convert to various formats");
+    Console.WriteLine();
+    Console.WriteLine("USAGE:");
+    Console.WriteLine("    LexemeExtractor <glob-pattern> [OPTIONS]");
+    Console.WriteLine("    LexemeExtractor [OPTIONS] < input.lexemes");
+    Console.WriteLine();
+    Console.WriteLine("ARGUMENTS:");
+    Console.WriteLine("    <glob-pattern>    File pattern to match (e.g., \"*.lexemes\", \"data/*.lex\")");
+    Console.WriteLine();
+    Console.WriteLine("OPTIONS:");
+    Console.WriteLine("    --format <format>    Output format: text, json, csv, xml (default: text)");
+    Console.WriteLine("    --help, -h           Show this help message");
+    Console.WriteLine("    --version, -v        Show version information");
+    Console.WriteLine();
+    Console.WriteLine("EXAMPLES:");
+    Console.WriteLine("    LexemeExtractor \"*.lexemes\"");
+    Console.WriteLine("    LexemeExtractor \"data/*.lex\" --format json");
+    Console.WriteLine("    cat file.lexemes | LexemeExtractor --format csv");
+    Console.WriteLine("    LexemeExtractor ~/documents/*.lexemes --format xml");
+    Console.WriteLine();
+    Console.WriteLine("NOTES:");
+    Console.WriteLine("    - Output files are created with the same name as input plus format extension");
+    Console.WriteLine("    - Lexeme name definitions are automatically loaded from companion .txt files");
+    Console.WriteLine("    - Supports piped input for processing single files");
+}
+
+static void ShowVersion()
+{
+    var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+    Console.WriteLine($"LexemeExtractor {version}");
+    Console.WriteLine("A .NET 9.0 AOT compiled application for processing lexeme files");
+}
+
+static ParseResult ParseArguments(string[] args)
+{
+    var result = new ParseResult();
 
     // Parse arguments
     for (var i = 0; i < args.Length; i++)
     {
-        if (args[i] == "--format" && i + 1 < args.Length)
-        {
-            outputFormat = args[i + 1].ToLowerInvariant();
-            i++; // Skip the format value
-        }
-        else if (!args[i].StartsWith("--"))
-        {
-            globPattern = args[i]; // First non-option argument is the glob pattern
-        }
-    }
+        var arg = args[i];
 
-    // Check if stdin has data available (piped input)
-    if (!Console.IsInputRedirected && args.Length == 0)
-    {
-        // No arguments and no piped input - show usage
-        return (null, outputFormat, false);
-    }
+        switch (arg)
+        {
+            case "--help" or "-h":
+                result.ShowHelp = true;
+                return result;
 
-    if (Console.IsInputRedirected || (args.Length > 0 && globPattern == null))
-    {
-        // Either input is redirected, or only format options provided
-        useStdin = true;
+            case "--version" or "-v":
+                result.ShowVersion = true;
+                return result;
+
+            case "--format":
+                if (i + 1 >= args.Length)
+                {
+                    result.HasError = true;
+                    result.ErrorMessage = "--format requires a value";
+                    return result;
+                }
+                result.OutputFormat = args[i + 1].ToLowerInvariant();
+                i++; // Skip the format value
+                break;
+
+            default:
+                if (arg.StartsWith("--"))
+                {
+                    result.HasError = true;
+                    result.ErrorMessage = $"Unknown option: {arg}";
+                    return result;
+                }
+                else if (result.GlobPattern == null)
+                {
+                    result.GlobPattern = arg; // First non-option argument is the glob pattern
+                }
+                else
+                {
+                    result.HasError = true;
+                    result.ErrorMessage = $"Unexpected argument: {arg}";
+                    return result;
+                }
+                break;
+        }
     }
 
     // Validate format
     var validFormats = new[] { "text", "json", "csv", "xml" };
-    if (validFormats.Contains(outputFormat)) return (globPattern, outputFormat, useStdin);
-    
-    Console.Error.WriteLine($"Invalid format '{outputFormat}'. Valid formats: {string.Join(", ", validFormats)}");
-    outputFormat = "text";
+    if (!validFormats.Contains(result.OutputFormat))
+    {
+        result.HasError = true;
+        result.ErrorMessage = $"Invalid format '{result.OutputFormat}'. Valid formats: {string.Join(", ", validFormats)}";
+        return result;
+    }
 
-    return (globPattern, outputFormat, useStdin);
+    // Determine if we should use stdin
+    if (Console.IsInputRedirected || (args.Length > 0 && result.GlobPattern == null && !result.ShowHelp && !result.ShowVersion))
+    {
+        result.UseStdin = true;
+    }
+
+    return result;
+}
+
+record ParseResult
+{
+    public string? GlobPattern { get; set; }
+    public string OutputFormat { get; set; } = "text";
+    public bool UseStdin { get; set; }
+    public bool ShowHelp { get; set; }
+    public bool ShowVersion { get; set; }
+    public bool HasError { get; set; }
+    public string? ErrorMessage { get; set; }
 }
 
 
