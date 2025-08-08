@@ -133,28 +133,60 @@ jobs:
           echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
         fi
 
-    - name: Create Release and Upload Assets
+    - name: Create Release
       run: |
         # Create release using GitHub CLI
         gh release create ${{ steps.version.outputs.version }} \
           --title "LexemeExtractor ${{ steps.version.outputs.version }}" \
           --notes "## LexemeExtractor ${{ steps.version.outputs.version }}
-        
+
         Cross-platform AOT compiled binaries for LexemeExtractor.
-        
-        ### Downloads
+
+        ### Features
+        - Command-line lexeme file processing with glob pattern support
+        - Multiple output formats: text, JSON, CSV, XML
+        - Comprehensive help system (\`--help\`, \`-h\`)
+        - Version information (\`--version\`, \`-v\`)
+        - Native AOT compilation - no .NET runtime required
+        - Graceful error handling with helpful guidance
+
+        ### Available Platforms
         - **Windows x64**: LexemeExtractor-windows-x64.zip
         - **Linux x64**: LexemeExtractor-linux-x64.tar.gz
         - **macOS x64**: LexemeExtractor-macos-x64.tar.gz
         - **macOS ARM64**: LexemeExtractor-macos-arm64.tar.gz
-        
+
         ### Installation
         1. Download the appropriate archive for your platform
         2. Extract the archive
         3. Run the executable directly (no .NET runtime required)
-        
+
         ### Usage
-        Run \`LexemeExtractor --help\` for detailed usage information." \
-          artifacts/*/*.{zip,tar.gz}
+        \`\`\`bash
+        # Get help
+        LexemeExtractor --help
+
+        # Process files
+        LexemeExtractor \"*.lexemes\"
+        LexemeExtractor \"data/*.lex\" --format json
+
+        # Pipe input
+        cat file.lexemes | LexemeExtractor --format csv
+        \`\`\`
+
+        ### Technical Details
+        - Built with .NET 9.0 Native AOT
+        - Cross-platform compilation via GitHub Actions
+        - Self-contained executables with no dependencies"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Release Assets
+      run: |
+        # Upload all archives to the release
+        find artifacts -name "*.zip" -o -name "*.tar.gz" | while read file; do
+          echo "Uploading $file"
+          gh release upload ${{ steps.version.outputs.version }} "$file" --clobber
+        done
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
