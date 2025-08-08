@@ -133,20 +133,18 @@ jobs:
           echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
         fi
 
-    - name: Create Release
+    - name: Create Release Notes
       run: |
-        # Create release using GitHub CLI
-        gh release create ${{ steps.version.outputs.version }} \
-          --title "LexemeExtractor ${{ steps.version.outputs.version }}" \
-          --notes "## LexemeExtractor ${{ steps.version.outputs.version }}
+        cat > release_notes.md << 'EOF'
+        ## LexemeExtractor ${{ steps.version.outputs.version }}
 
         Cross-platform AOT compiled binaries for LexemeExtractor.
 
         ### Features
         - Command-line lexeme file processing with glob pattern support
         - Multiple output formats: text, JSON, CSV, XML
-        - Comprehensive help system (\`--help\`, \`-h\`)
-        - Version information (\`--version\`, \`-v\`)
+        - Comprehensive help system (`--help`, `-h`)
+        - Version information (`--version`, `-v`)
         - Native AOT compilation - no .NET runtime required
         - Graceful error handling with helpful guidance
 
@@ -162,22 +160,29 @@ jobs:
         3. Run the executable directly (no .NET runtime required)
 
         ### Usage
-        \`\`\`bash
+        ```bash
         # Get help
         LexemeExtractor --help
 
         # Process files
-        LexemeExtractor \"*.lexemes\"
-        LexemeExtractor \"data/*.lex\" --format json
+        LexemeExtractor "*.lexemes"
+        LexemeExtractor "data/*.lex" --format json
 
         # Pipe input
         cat file.lexemes | LexemeExtractor --format csv
-        \`\`\`
+        ```
 
         ### Technical Details
         - Built with .NET 9.0 Native AOT
         - Cross-platform compilation via GitHub Actions
-        - Self-contained executables with no dependencies"
+        - Self-contained executables with no dependencies
+        EOF
+
+    - name: Create Release
+      run: |
+        gh release create ${{ steps.version.outputs.version }} \
+          --title "LexemeExtractor ${{ steps.version.outputs.version }}" \
+          --notes-file release_notes.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
