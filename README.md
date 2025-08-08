@@ -1,11 +1,13 @@
 # LexemeExtractor
 
-A .NET 9.0 console application that decompresses and processes lexeme files from Semantic Designs. The application processes files matching glob patterns with support for Linux path conventions.
+A .NET 9.0 console application that decompresses lexeme files from Semantic Designs and generates formatted output. The application supports multiple output formats and can process files via glob patterns or stdin.
 
 ## Features
 
 - **Lexeme File Decompression**: Decompresses and decodes lexeme files from Semantic Designs
-- **Glob Pattern Matching**: Process multiple files using standard glob patterns (e.g., `*.lexemes`, `*.txt`)
+- **Multiple Output Formats**: Supports text, JSON, CSV, and XML output formats
+- **Glob Pattern Matching**: Process multiple lexeme files using standard glob patterns
+- **Stdin Support**: Process lexeme files via piped input
 - **Linux Path Support**: Support for `~/` home directory expansion on Linux
 - **Name Definition Support**: Automatically loads human-readable lexeme names from companion definition files
 - **Cross-Platform**: Built for .NET 9.0 with Linux x64 runtime
@@ -14,12 +16,19 @@ A .NET 9.0 console application that decompresses and processes lexeme files from
 ## Usage
 
 ```bash
-LexemeExtractor <glob-pattern>
+LexemeExtractor <glob-pattern> [OPTIONS]
+LexemeExtractor [OPTIONS] < input.lexemes
 ```
+
+### Options
+
+- `--format <format>`: Output format: text, json, csv, xml (default: text)
+- `--help, -h`: Show help message
+- `--version, -v`: Show version information
 
 ### Name Definition Files
 
-A name definition file for the lexer domain is required. This file must be named with the same name that is provided at the top of each lexeme file (the domain/dialect name). The application searches for name definition files in the following order:
+A name definition file for the lexer domain is required. This file must be a .txt file named with the same name that is provided at the top of each lexeme file (the domain/dialect name). For example, if the lexeme file contains "COBOL~IBMEnterprise" as the domain, the application will look for "COBOL~IBMEnterprise.txt". The application searches for name definition files in the following order:
 
 1. Same directory as the input file
 2. Directory specified by `LEXEME_NAMES_FILES` environment variable
@@ -39,17 +48,17 @@ Where names may have quotes, numbers are in base16 with colon prefix, and types 
 # Process all lexeme files in current directory
 LexemeExtractor "*.lexemes"
 
-# Process all text files in current directory
-LexemeExtractor "*.txt"
+# Process lexeme files with JSON output
+LexemeExtractor "data/*.lex" --format json
 
-# Process all C# files in a subdirectory
-LexemeExtractor "src/*.cs"
+# Process a single lexeme file via pipe
+cat file.lexemes | LexemeExtractor --format csv
 
-# Process files in home directory
-LexemeExtractor "~/Documents/*.log"
+# Process lexeme files in home directory with XML output
+LexemeExtractor ~/documents/*.lexemes --format xml
 
-# Process files with absolute path
-LexemeExtractor "/var/log/*.log"
+# Pipe through less for viewing large outputs
+cat large.lexemes | LexemeExtractor | less
 ```
 
 ## Building
@@ -98,11 +107,11 @@ dotnet run --project LexemeExtractor -- "*.lexemes"
 
 The application follows a simple, functional approach:
 
-1. **Argument Validation**: Ensures a glob pattern is provided
+1. **Argument Validation**: Ensures a glob pattern is provided or stdin is available
 2. **Path Expansion**: Handles `~/` expansion for Linux home directories
 3. **Pattern Separation**: Splits directory path from file pattern
 4. **File Discovery**: Uses `Directory.GetFiles()` for pattern matching
-5. **File Processing**: Calls `ProcessFile()` method for each matching file
+5. **File Processing**: Decompresses lexeme files and generates formatted output
 
 ## Documentation
 
