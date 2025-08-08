@@ -28,7 +28,7 @@ LexemeExtractor [OPTIONS] < input.lexemes
 
 ### Name Definition Files
 
-A name definition file for the lexer domain is required. This file must be a .txt file named with the same name that is provided at the top of each lexeme file (the domain/dialect name). For example, if the lexeme file contains "COBOL~IBMEnterprise" as the domain, the application will look for "COBOL~IBMEnterprise.txt". The application searches for name definition files in the following order:
+A name definition file for the lexer domain is required. This file must be a .txt file named with the same name that is provided at the top of each lexeme file (the domain/dialect name). For example, if the lexeme file contains `COBOL~IBMEnterprise` as the domain, the application will look for `COBOL~IBMEnterprise.txt`. The application searches for name definition files in the following order:
 
 1. Same directory as the input file
 2. Directory specified by `LEXEME_NAMES_FILES` environment variable
