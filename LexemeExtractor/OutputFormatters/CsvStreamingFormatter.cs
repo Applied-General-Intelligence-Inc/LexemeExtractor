@@ -26,11 +26,6 @@ public class CsvStreamingFormatter : StreamingFormatterBase
 
         // Write CSV header row
         Writer.WriteLine("Type,NumberString,Number,Name,ValueType,Line,Column,EndLine,EndColumn,Length,IsRange,ContentType,Content");
-        
-        // Write file metadata as a comment (if supported by the consumer)
-        Writer.WriteLine($"# Domain: {EscapeCsvValue(header.Domain)}");
-        Writer.WriteLine($"# Filename: {EscapeCsvValue(header.Filename)}");
-        Writer.WriteLine($"# Encoding: {EscapeCsvValue(header.Encoding)}");
     }
 
     /// <summary>
@@ -55,14 +50,14 @@ public class CsvStreamingFormatter : StreamingFormatterBase
     }
 
     /// <summary>
-    /// Writes the CSV footer (just a comment with total count)
+    /// Writes the CSV footer
     /// </summary>
     public override void WriteFooter(int totalCount)
     {
         if (Disposed)
             throw new ObjectDisposedException(nameof(CsvStreamingFormatter));
 
-        Writer.WriteLine($"# Total lexemes: {totalCount}");
+        // No footer content needed for pure CSV
     }
 
     /// <summary>
