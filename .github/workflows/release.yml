@@ -29,24 +29,12 @@ jobs:
             rid: win-x64
             artifact_name: LexemeExtractor-windows-x64
             executable_extension: .exe
-          - os: windows
-            arch: arm64
-            runner: windows-latest
-            rid: win-arm64
-            artifact_name: LexemeExtractor-windows-arm64
-            executable_extension: .exe
           # Linux builds
           - os: linux
             arch: x64
             runner: ubuntu-latest
             rid: linux-x64
             artifact_name: LexemeExtractor-linux-x64
-            executable_extension: ''
-          - os: linux
-            arch: arm64
-            runner: ubuntu-latest
-            rid: linux-arm64
-            artifact_name: LexemeExtractor-linux-arm64
             executable_extension: ''
           # macOS builds
           - os: macos
@@ -150,16 +138,17 @@ jobs:
         
         ### Downloads
         - **Windows x64**: LexemeExtractor-windows-x64.zip
-        - **Windows ARM64**: LexemeExtractor-windows-arm64.zip
         - **Linux x64**: LexemeExtractor-linux-x64.tar.gz
-        - **Linux ARM64**: LexemeExtractor-linux-arm64.tar.gz
         - **macOS x64**: LexemeExtractor-macos-x64.tar.gz
         - **macOS ARM64**: LexemeExtractor-macos-arm64.tar.gz
         
         ### Installation
         1. Download the appropriate archive for your platform
         2. Extract the archive
-        3. Run the executable directly (no .NET runtime required)" \
+        3. Run the executable directly (no .NET runtime required)
+        
+        ### Usage
+        Run \`LexemeExtractor --help\` for detailed usage information." \
           artifacts/*/*.{zip,tar.gz}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
