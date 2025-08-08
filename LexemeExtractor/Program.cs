@@ -2,17 +2,19 @@
 using System.Text;
 using LexemeExtractor.Superpower;
 using LexemeExtractor.Models;
+using LexemeExtractor.OutputFormatters;
 using static LexemeExtractor.Superpower.CompressedLexemeParser;
 
 // Parse command line arguments
-var (globPattern, useStdin) = ParseArguments(args);
+var (globPattern, outputFormat, useStdin) = ParseArguments(args);
 
 if (globPattern == null && !useStdin)
 {
-    Console.WriteLine("Usage: LexemeExtractor <glob-pattern>");
-    Console.WriteLine("       LexemeExtractor < input.lexemes");
-    Console.WriteLine("Example: LexemeExtractor \"*.lexemes\"");
-    Console.WriteLine("Example: cat file.lexemes | LexemeExtractor");
+    Console.WriteLine("Usage: LexemeExtractor <glob-pattern> [--format <format>]");
+    Console.WriteLine("       LexemeExtractor [--format <format>] < input.lexemes");
+    Console.WriteLine("Formats: text (default), json, csv, xml");
+    Console.WriteLine("Example: LexemeExtractor \"*.lexemes\" --format json");
+    Console.WriteLine("Example: cat file.lexemes | LexemeExtractor --format csv");
     return 1;
 }
 
@@ -21,7 +23,7 @@ try
     if (useStdin)
     {
         // Process input from stdin
-        ProcessStdin();
+        ProcessStdin(outputFormat);
     }
     else
     {
@@ -52,7 +54,7 @@ try
         // Process each matching file
         foreach (var filePath in matchingFiles)
         {
-            ProcessFile(filePath);
+            ProcessFile(filePath, outputFormat);
         }
     }
 }
@@ -64,10 +66,8 @@ catch (Exception ex)
 
 return 0;
 
-static void ProcessFile(string inputFilePath)
+static void ProcessFile(string inputFilePath, string outputFormat)
 {
-    Console.WriteLine($"Processing file: {Path.GetFileName(inputFilePath)}");
-
     try
     {
         var fileContent = System.IO.File.ReadAllText(inputFilePath);
@@ -78,48 +78,33 @@ static void ProcessFile(string inputFilePath)
 
         // Load name definitions using Superpower parser
         var definitionFilePath = NameDefinitionParser.GetDefinitionFilePath(domain, inputFilePath);
-        Console.WriteLine($"  Definition file: {definitionFilePath}");
-
         var nameDefinitions = NameDefinitionParser.ParseFile(definitionFilePath);
-        Console.WriteLine($"  Name definitions: {nameDefinitions.Count}");
 
-        // Now parse once with name definitions
+        // Parse the file with name definitions
         var parsedFile = Parse(fileContent, nameDefinitions);
 
-        Console.WriteLine($"Successfully parsed file:");
-        Console.WriteLine($"  Domain: {parsedFile.Header.Domain}");
-        Console.WriteLine($"  File Source: {parsedFile.Header.Filename}");
-        Console.WriteLine($"  Encoding: {parsedFile.Header.Encoding}");
-        Console.WriteLine($"  Lexemes: {parsedFile.Lexemes.Count}");
+        // Use the formatter to output the results
+        using var formatter = FormatterFactory.CreateFormatter(outputFormat, Console.Out);
 
-        // Display first few lexemes for verification
-        var lexemesToShow = Math.Min(5, parsedFile.Lexemes.Count);
-        for (int i = 0; i < lexemesToShow; i++)
+        formatter.WriteHeader(parsedFile.Header);
+        foreach (var lexeme in parsedFile.Lexemes)
         {
-            var lexeme = parsedFile.Lexemes[i];
-            var nameDisplay = lexeme.NameDefinition?.Name ?? "(no name)";
-            Console.WriteLine($"  [{i}] Type: {lexeme.Type}, Number: {lexeme.NumberString}, Name: {nameDisplay}, Content: {lexeme.Content.GetType().Name}");
+            formatter.WriteLexeme(lexeme);
         }
-
-        if (parsedFile.Lexemes.Count > lexemesToShow)
-        {
-            Console.WriteLine($"  ... and {parsedFile.Lexemes.Count - lexemesToShow} more lexemes");
-        }
+        formatter.WriteFooter(parsedFile.Lexemes.Count);
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error processing file: {ex.Message}");
+        Console.Error.WriteLine($"Error processing file {Path.GetFileName(inputFilePath)}: {ex.Message}");
         if (ex.InnerException != null)
         {
-            Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+            Console.Error.WriteLine($"Inner exception: {ex.InnerException.Message}");
         }
     }
 }
 
-static void ProcessStdin()
+static void ProcessStdin(string outputFormat)
 {
-    Console.Error.WriteLine("Processing stdin");
-
     try
     {
         var input = Console.In.ReadToEnd();
@@ -132,29 +117,18 @@ static void ProcessStdin()
         var definitionFilePath = NameDefinitionParser.GetDefinitionFilePath(domain, "<stdin>");
         var nameDefinitions = NameDefinitionParser.ParseFile(definitionFilePath);
 
-        // Now parse once with name definitions
+        // Parse the input with name definitions
         var parsedFile = Parse(input, nameDefinitions);
 
-        Console.WriteLine($"Successfully parsed stdin:");
-        Console.WriteLine($"  Domain: {parsedFile.Header.Domain}");
-        Console.WriteLine($"  File Source: {parsedFile.Header.Filename}");
-        Console.WriteLine($"  Encoding: {parsedFile.Header.Encoding}");
-        Console.WriteLine($"  Lexemes: {parsedFile.Lexemes.Count}");
-        Console.WriteLine($"  Name definitions: {nameDefinitions.Count}");
+        // Use the formatter to output the results
+        using var formatter = FormatterFactory.CreateFormatter(outputFormat, Console.Out);
 
-        // Display first few lexemes for verification
-        var lexemesToShow = Math.Min(5, parsedFile.Lexemes.Count);
-        for (int i = 0; i < lexemesToShow; i++)
+        formatter.WriteHeader(parsedFile.Header);
+        foreach (var lexeme in parsedFile.Lexemes)
         {
-            var lexeme = parsedFile.Lexemes[i];
-            var nameDisplay = lexeme.NameDefinition?.Name ?? "(no name)";
-            Console.WriteLine($"  [{i}] Type: {lexeme.Type}, Number: {lexeme.NumberString}, Name: {nameDisplay}, Content: {lexeme.Content.GetType().Name}");
+            formatter.WriteLexeme(lexeme);
         }
-
-        if (parsedFile.Lexemes.Count > lexemesToShow)
-        {
-            Console.WriteLine($"  ... and {parsedFile.Lexemes.Count - lexemesToShow} more lexemes");
-        }
+        formatter.WriteFooter(parsedFile.Lexemes.Count);
     }
     catch (Exception ex)
     {
@@ -167,31 +141,48 @@ static void ProcessStdin()
     }
 }
 
-static (string? globPattern, bool useStdin) ParseArguments(string[] args)
+static (string? globPattern, string outputFormat, bool useStdin) ParseArguments(string[] args)
 {
     string? globPattern = null;
+    string outputFormat = "text"; // Default format
     bool useStdin = false;
+
+    // Parse arguments
+    for (int i = 0; i < args.Length; i++)
+    {
+        if (args[i] == "--format" && i + 1 < args.Length)
+        {
+            outputFormat = args[i + 1].ToLowerInvariant();
+            i++; // Skip the format value
+        }
+        else if (!args[i].StartsWith("--"))
+        {
+            globPattern = args[i]; // First non-option argument is the glob pattern
+        }
+    }
 
     // Check if stdin has data available (piped input)
     if (!Console.IsInputRedirected && args.Length == 0)
     {
         // No arguments and no piped input - show usage
-        return (null, false);
+        return (null, outputFormat, false);
     }
 
-    if (Console.IsInputRedirected || args.Length == 0)
+    if (Console.IsInputRedirected || (args.Length > 0 && globPattern == null))
     {
-        // Either input is redirected, or no arguments provided
+        // Either input is redirected, or only format options provided
         useStdin = true;
     }
-    else
+
+    // Validate format
+    var validFormats = new[] { "text", "json", "csv", "xml" };
+    if (!validFormats.Contains(outputFormat))
     {
-        // Use the first argument as the glob pattern
-        globPattern = args[0];
-        useStdin = false;
+        Console.Error.WriteLine($"Invalid format '{outputFormat}'. Valid formats: {string.Join(", ", validFormats)}");
+        outputFormat = "text";
     }
 
-    return (globPattern, useStdin);
+    return (globPattern, outputFormat, useStdin);
 }
 
 
