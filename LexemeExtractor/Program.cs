@@ -71,12 +71,25 @@ static void ProcessFile(string inputFilePath)
     try
     {
         var fileContent = System.IO.File.ReadAllText(inputFilePath);
-        var parsedFile = Parse(fileContent);
+
+        // Parse just the header to get the domain (without parsing all lexemes)
+        var lines = fileContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var domain = lines.Length > 0 ? lines[0].Trim() : "";
+
+        // Load name definitions using Superpower parser
+        var definitionFilePath = NameDefinitionParser.GetDefinitionFilePath(domain, inputFilePath);
+        Console.WriteLine($"  Definition file: {definitionFilePath}");
+
+        var nameDefinitions = NameDefinitionParser.ParseFile(definitionFilePath);
+        Console.WriteLine($"  Name definitions: {nameDefinitions.Count}");
+
+        // Now parse once with name definitions
+        var parsedFile = Parse(fileContent, nameDefinitions);
 
         Console.WriteLine($"Successfully parsed file:");
-        Console.WriteLine($"  Domain: {parsedFile.Domain}");
-        Console.WriteLine($"  File Source: {parsedFile.FileSourceInformation}");
-        Console.WriteLine($"  Encoding: {parsedFile.Encoding}");
+        Console.WriteLine($"  Domain: {parsedFile.Header.Domain}");
+        Console.WriteLine($"  File Source: {parsedFile.Header.Filename}");
+        Console.WriteLine($"  Encoding: {parsedFile.Header.Encoding}");
         Console.WriteLine($"  Lexemes: {parsedFile.Lexemes.Count}");
 
         // Display first few lexemes for verification
@@ -84,7 +97,8 @@ static void ProcessFile(string inputFilePath)
         for (int i = 0; i < lexemesToShow; i++)
         {
             var lexeme = parsedFile.Lexemes[i];
-            Console.WriteLine($"  [{i}] Type: {lexeme.Type}, Number: {lexeme.Radix36Number}, Position: {lexeme.Position.GetType().Name}, Content: {lexeme.Content.GetType().Name}");
+            var nameDisplay = lexeme.NameDefinition?.Name ?? "(no name)";
+            Console.WriteLine($"  [{i}] Type: {lexeme.Type}, Number: {lexeme.NumberString}, Name: {nameDisplay}, Content: {lexeme.Content.GetType().Name}");
         }
 
         if (parsedFile.Lexemes.Count > lexemesToShow)
@@ -109,20 +123,32 @@ static void ProcessStdin()
     try
     {
         var input = Console.In.ReadToEnd();
-        var parsedFile = Parse(input);
+
+        // Parse just the header to get the domain (without parsing all lexemes)
+        var lines = input.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var domain = lines.Length > 0 ? lines[0].Trim() : "";
+
+        // Load name definitions using Superpower parser
+        var definitionFilePath = NameDefinitionParser.GetDefinitionFilePath(domain, "<stdin>");
+        var nameDefinitions = NameDefinitionParser.ParseFile(definitionFilePath);
+
+        // Now parse once with name definitions
+        var parsedFile = Parse(input, nameDefinitions);
 
         Console.WriteLine($"Successfully parsed stdin:");
-        Console.WriteLine($"  Domain: {parsedFile.Domain}");
-        Console.WriteLine($"  File Source: {parsedFile.FileSourceInformation}");
-        Console.WriteLine($"  Encoding: {parsedFile.Encoding}");
+        Console.WriteLine($"  Domain: {parsedFile.Header.Domain}");
+        Console.WriteLine($"  File Source: {parsedFile.Header.Filename}");
+        Console.WriteLine($"  Encoding: {parsedFile.Header.Encoding}");
         Console.WriteLine($"  Lexemes: {parsedFile.Lexemes.Count}");
+        Console.WriteLine($"  Name definitions: {nameDefinitions.Count}");
 
         // Display first few lexemes for verification
         var lexemesToShow = Math.Min(5, parsedFile.Lexemes.Count);
         for (int i = 0; i < lexemesToShow; i++)
         {
             var lexeme = parsedFile.Lexemes[i];
-            Console.WriteLine($"  [{i}] Type: {lexeme.Type}, Number: {lexeme.Radix36Number}, Position: {lexeme.Position.GetType().Name}, Content: {lexeme.Content.GetType().Name}");
+            var nameDisplay = lexeme.NameDefinition?.Name ?? "(no name)";
+            Console.WriteLine($"  [{i}] Type: {lexeme.Type}, Number: {lexeme.NumberString}, Name: {nameDisplay}, Content: {lexeme.Content.GetType().Name}");
         }
 
         if (parsedFile.Lexemes.Count > lexemesToShow)

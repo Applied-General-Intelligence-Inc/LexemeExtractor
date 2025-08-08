@@ -2,6 +2,7 @@ using Superpower;
 using Superpower.Model;
 using Superpower.Parsers;
 using static Superpower.Parse;
+using LexemeExtractor.Models;
 
 namespace LexemeExtractor.Superpower;
 
@@ -9,35 +10,159 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-// AST Types with primary constructors
+// AST Types
 public record File(string Domain, string FileSourceInformation, string Encoding, List<Lexeme> Lexemes);
 public record Lexeme(char Type, string Radix36Number, Position Position, Content Content);
 
-public abstract record Position;
-public record SamePosition(int Width) : Position;
-public record SameLineEndColumn(Column EndColumn) : Position;
-public record SameLineStartColumn(Column StartColumn, int Width) : Position;
-public record SameLineRange(Column StartColumn, Column EndColumn) : Position;
-public record NextLineRange(Column StartColumn, Column EndColumn) : Position;
-public record FullRange(StartPosition Start, EndPosition End) : Position;
+// Absolute position record for method parameters and returns
+public record AbsolutePosition(int StartLine, int StartColumn, int EndLine, int EndColumn)
+{
+    public int StartLine = StartLine;
+    public int StartColumn = StartColumn; 
+    public int EndLine = StartLine;
+    public int EndColumn = EndColumn;
+}
 
-public abstract record StartPosition;
-public abstract record EndPosition;
-public record AbsoluteLineStartPosition(int LineNumber, Column Column) : StartPosition;
-public record AbsoluteLineEndPosition(int LineNumber, Column Column) : EndPosition;
-public record SameLineStartPosition(Column Column) : StartPosition;
-public record SameLineEndPosition(Column Column) : EndPosition;
-public record PunctuationLineStartPosition(char Punctuation, Column Column) : StartPosition;
-public record PunctuationLineEndPosition(char Punctuation, Column Column) : EndPosition;
-public record EncodedStartPosition(EncodedPositionType Type) : StartPosition;
-public record EncodedEndPosition(EncodedPositionType Type) : EndPosition;
+public abstract record Position
+{
+    public abstract AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition);
+}
+
+public record SamePosition(int Width) : Position
+{
+    public override AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition) =>
+        new AbsolutePosition(currentPosition.StartLine, currentPosition.EndColumn + 1, currentPosition.EndColumn + Width);
+}
+
+public record SameLineEndColumn(Column EndColumn) : Position
+{
+    public override AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition) =>
+        new AbsolutePosition(currentPosition.StartLine, currentPosition.StartColumn, EndColumn.GetAbsoluteColumn(currentPosition));
+}
+
+public record SameLineStartColumn(Column StartColumn, int Width) : Position
+{
+    public override AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition)
+    {
+        var startCol = StartColumn.GetAbsoluteColumn(currentPosition);
+        return new AbsolutePosition(currentPosition.StartLine, startCol, startCol + Width - 1);
+    }
+}
+
+public record SameLineRange(Column StartColumn, Column EndColumn) : Position
+{
+    public override AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition) =>
+        new AbsolutePosition(currentPosition.StartLine, StartColumn.GetAbsoluteColumn(currentPosition), EndColumn.GetAbsoluteColumn(currentPosition));
+}
+
+public record NextLineRange(Column StartColumn, Column EndColumn) : Position
+{
+    public override AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition)
+    {
+        // When moving to next line, create a position context with column reset to 0
+        var nextLinePosition = new AbsolutePosition(currentPosition.StartLine + 1, 1, 1);
+        nextLinePosition.StartColumn = StartColumn.GetAbsoluteColumn(nextLinePosition);
+        nextLinePosition.EndColumn = EndColumn.GetAbsoluteColumn(nextLinePosition);
+        return nextLinePosition;
+    }
+}
+
+public record FullRange(StartPosition Start, EndPosition End) : Position
+{
+    public override AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition)
+    {
+        var startPos = Start.Position.GetAbsolutePosition(currentPosition);
+        var endPos = End.Position.GetAbsolutePosition(currentPosition);
+        return new AbsolutePosition(startPos.LineNumber, startPos.Column, endPos.Column);
+    }
+}
+
+// Base position type that can be used as either start or end
+public abstract record PositionBase
+{
+    public abstract (int LineNumber, int Column) GetAbsolutePosition(AbsolutePosition currentPosition);
+}
+
+public record AbsoluteLinePosition(int LineNumber, Column Column) : PositionBase
+{
+    public override (int LineNumber, int Column) GetAbsolutePosition(AbsolutePosition currentPosition)
+    {
+        // When line changes, create a position context with column reset to 0
+        var positionContext = LineNumber != currentPosition.StartLine
+            ? new AbsolutePosition(LineNumber, 1, 1)
+            : currentPosition;
+        return (LineNumber, Column.GetAbsoluteColumn(positionContext));
+    }
+}
+
+public record SameLinePosition(Column Column) : PositionBase
+{
+    public override (int LineNumber, int Column) GetAbsolutePosition(AbsolutePosition currentPosition) =>
+        (currentPosition.StartLine, Column.GetAbsoluteColumn(currentPosition));
+}
+
+public record PunctuationLinePosition(char Punctuation, Column Column) : PositionBase
+{
+    public override (int LineNumber, int Column) GetAbsolutePosition(AbsolutePosition currentPosition)
+    {
+        // Punctuation characters !"... (codes #21-#2F) indicate "the last line number incremented by 1-15"
+        // corresponding to the punctuation character code minus #20
+        var increment = (int)Punctuation - 0x20;
+        var lineNumber = currentPosition.StartLine + increment;
+
+        // When line changes, create a position context with column reset to 0
+        var newLinePosition = new AbsolutePosition(lineNumber, 0, 0);
+        return (lineNumber, Column.GetAbsoluteColumn(newLinePosition));
+    }
+}
+
+public record EncodedPosition(EncodedPositionType Type) : PositionBase
+{
+    public override (int LineNumber, int Column) GetAbsolutePosition(AbsolutePosition currentPosition) => Type switch
+    {
+        EncodedPositionType.SameLineColumn => (LineNumber: currentPosition.StartLine, currentPosition.StartColumn),
+        EncodedPositionType.ColumnPlusOne => (LineNumber: currentPosition.StartLine, currentPosition.StartColumn + 1),
+        EncodedPositionType.ColumnPlusTwo => (LineNumber: currentPosition.StartLine, currentPosition.StartColumn + 2),
+        _ => (LineNumber: currentPosition.StartLine, currentPosition.StartColumn)
+    };
+}
+
+// Wrapper records for start and end positions
+public record StartPosition(PositionBase Position);
+public record EndPosition(PositionBase Position);
 
 public enum EncodedPositionType { SameLineColumn, ColumnPlusOne, ColumnPlusTwo }
 
-public abstract record Column;
-public record AbsoluteColumn(int Number) : Column;
-public record RelativeColumn(char Radix52Digit) : Column;
-public record SameColumn : Column;
+public abstract record Column
+{
+    public abstract int GetAbsoluteColumn(AbsolutePosition currentPosition);
+}
+
+public record AbsoluteColumn(int Number) : Column
+{
+    public override int GetAbsoluteColumn(AbsolutePosition currentPosition) => Number;
+}
+
+public record RelativeColumn(char Radix52Digit) : Column
+{
+    public override int GetAbsoluteColumn(AbsolutePosition currentPosition)
+    {
+        // Convert radix52 digit to offset
+        var offset = Radix52Digit switch
+        {
+            >= 'a' and <= 'z' => Radix52Digit - 'a' + 27,
+            >= 'A' and <= 'Z' => Radix52Digit - 'A' + 1,
+            _ => 0
+        };
+        
+        return Math.Max(currentPosition.StartColumn, currentPosition.EndColumn) + offset;
+    }
+}
+
+public record SameColumn : Column
+{
+    public override int GetAbsoluteColumn(AbsolutePosition currentPosition) => currentPosition.StartColumn;
+}
 
 public abstract record Content;
 public record EmptyContent : Content;
@@ -74,74 +199,67 @@ public static class CompressedLexemeParser
         .Or(Character.Letter.Select(c => (Column)new RelativeColumn(c)));
 
     // Position parsers
-    static readonly TextParser<char> PunctuationParser = Character.In('!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/');
+    static readonly TextParser<char> PunctuationParser = 
+        Character.Matching(c => c >= '!' && c <= '/', "punctuation character (! through /)");
 
     static readonly TextParser<StartPosition> EncodedStartPositionParser =
-        Character.In('@', '|', '_').Select(c => (StartPosition)new EncodedStartPosition(
+        Character.In('@', '|', '_').Select(c => new StartPosition(new EncodedPosition(
             c switch
             {
                 '@' => EncodedPositionType.SameLineColumn,
                 '|' => EncodedPositionType.ColumnPlusOne,
                 _ => EncodedPositionType.ColumnPlusTwo
-            }));
+            })));
 
     static readonly TextParser<EndPosition> EncodedEndPositionParser =
-        Character.In('@', '|', '_').Select(c => (EndPosition)new EncodedEndPosition(
+        Character.In('@', '|', '_').Select(c => new EndPosition(new EncodedPosition(
             c switch
             {
                 '@' => EncodedPositionType.SameLineColumn,
                 '|' => EncodedPositionType.ColumnPlusOne,
                 _ => EncodedPositionType.ColumnPlusTwo
-            }));
+            })));
 
     static readonly TextParser<StartPosition> StartPositionParser =
         EncodedStartPositionParser
-        .Or(from line in NumberParser
-            from _ in Character.WhiteSpace
-            from col in ColumnParser
-            select (StartPosition)new AbsoluteLineStartPosition(line, col))
-        .Or(from _ in Character.EqualTo('=')
-            from __ in Character.WhiteSpace
-            from col in ColumnParser
-            select (StartPosition)new SameLineStartPosition(col))
-        .Or(from punct in PunctuationParser
-            from _ in Character.WhiteSpace
-            from col in ColumnParser
-            select (StartPosition)new PunctuationLineStartPosition(punct, col));
+            .Or(from line in NumberParser
+                from col in ColumnParser
+                select new StartPosition(new AbsoluteLinePosition(line, col)))
+            .Or(from _ in Character.EqualTo('=')
+                from col in ColumnParser
+                select new StartPosition(new SameLinePosition(col)))
+            .Or(from punct in PunctuationParser
+                from col in ColumnParser
+                select new StartPosition(new PunctuationLinePosition(punct, col)));
 
     static readonly TextParser<EndPosition> EndPositionParser =
         EncodedEndPositionParser
-        .Or(from line in NumberParser
-            from _ in Character.WhiteSpace
-            from col in ColumnParser
-            select (EndPosition)new AbsoluteLineEndPosition(line, col))
-        .Or(from _ in Character.EqualTo('=')
-            from __ in Character.WhiteSpace
-            from col in ColumnParser
-            select (EndPosition)new SameLineEndPosition(col))
-        .Or(from punct in PunctuationParser
-            from _ in Character.WhiteSpace
-            from col in ColumnParser
-            select (EndPosition)new PunctuationLineEndPosition(punct, col));
+            .Or(from line in NumberParser
+                from col in ColumnParser
+                select new EndPosition(new AbsoluteLinePosition(line, col)))
+            .Or(from _ in Character.EqualTo('=')
+                from col in ColumnParser
+                select new EndPosition(new SameLinePosition(col)))
+            .Or(from punct in PunctuationParser
+                from col in ColumnParser
+                select new EndPosition(new PunctuationLinePosition(punct, col)));
 
-    // Position parser - handle various position encoding patterns
     static readonly TextParser<Position> PositionParser =
-        // Single character positions
-        Character.In(':', ';', '@', '|', '_').Select(_ => (Position)new SamePosition(1))
-        // Bracket-based positions
-        .Or(from bracket in Character.In('[', ']')
-            from chars in Character.Letter.AtLeastOnce()
-            select (Position)new SamePosition(1))
-        // Punctuation-based line increment (quote followed by column, but not string content)
-        .Or(from punct in Character.In('!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/')
-            from col in Character.Letter
-            select (Position)new SamePosition(1))
-        // Other position patterns
-        .Or(Character.ExceptIn('\n', '\r', '+', '-', '~').Where(c => !char.IsDigit(c) || c == '0').AtLeastOnce()
-            .Select(_ => (Position)new SamePosition(1)))
-        // Empty position
-        .Or(Return<Position>(new SamePosition(1)));
-
+        Character.In(':', ';').Select(c => (Position)new SamePosition(c == ':' ? 1 : 2))
+            .Or(from _ in Character.EqualTo('^')
+                from col in ColumnParser
+                select (Position)new SameLineEndColumn(col))
+            .Or(from c in Character.In('<', '>')
+                from col in ColumnParser
+                select (Position)new SameLineStartColumn(col, c == '<' ? 1 : 2))
+            .Or(from c in Character.In('[', ']')
+                from col1 in ColumnParser
+                from col2 in ColumnParser
+                select (Position)(c == '[' ? new SameLineRange(col1, col2) : new NextLineRange(col1, col2)))
+            .Or(from start in StartPositionParser
+                from end in EndPositionParser
+                select (Position)new FullRange(start, end));
+    
     // String content parser - quote followed by content (no closing quote required)
     static readonly TextParser<string> StringContentParser =
         from _ in Character.EqualTo('"')
@@ -186,6 +304,61 @@ public static class CompressedLexemeParser
         from lexemes in LexemeParser.Many()
         select new File(domain, fileSourceInfo, encoding, lexemes.ToList());
 
-    // Main parse method
-    public static File Parse(string input) => FileParser.Parse(input);
+    // Helper method to convert Superpower AST to Models
+    static Models.Lexeme ConvertToModelLexeme(Lexeme superpowerLexeme, Dictionary<string, LexemeNameDefinition>? nameDefinitions, ref AbsolutePosition currentPosition)
+    {
+        // Look up name definition by base36 string
+        LexemeNameDefinition? nameDefinition = null;
+        nameDefinitions?.TryGetValue(superpowerLexeme.Radix36Number, out nameDefinition);
+
+        // Convert content
+        var modelContent = ConvertContent(superpowerLexeme.Content);
+
+        // Convert position using the GetLexemePosition method
+        var lexemeAbsolutePosition = superpowerLexeme.Position.GetLexemePosition(currentPosition);
+        
+        var modelPosition = new Models.Position(lexemeAbsolutePosition.StartLine, lexemeAbsolutePosition.StartColumn,
+                                lexemeAbsolutePosition.StartLine, lexemeAbsolutePosition.EndColumn);
+
+        // Update current position to the end of this lexeme for the next iteration
+        currentPosition = lexemeAbsolutePosition;
+
+        return new Models.Lexeme
+        {
+            Type = superpowerLexeme.Type.ToString(),
+            NumberString = superpowerLexeme.Radix36Number,
+            Position = modelPosition,
+            Content = modelContent,
+            NameDefinition = nameDefinition
+        };
+    }
+
+    // Helper method to convert content
+    static LexemeContent ConvertContent(Content superpowerContent) => superpowerContent switch
+    {
+        EmptyContent => LexemeContent.Empty,
+        StringContent sc => new Models.StringContent(sc.Value),
+        IntegerContent ic => new Models.NumberContent(ic.Value),
+        FloatContent fc => new Models.NumberContent((long)fc.Value), // Convert float to long for now
+        BooleanContent bc => new Models.BooleanContent(bc.Value),
+        _ => LexemeContent.Empty
+    };
+
+    // Main parse method - without name definitions (for backward compatibility)
+    public static Models.LexemeFile Parse(string input) => Parse(input, null);
+
+    // Main parse method - with name definitions
+    public static Models.LexemeFile Parse(string input, Dictionary<string, LexemeNameDefinition>? nameDefinitions)
+    {
+        var superpowerFile = FileParser.Parse(input);
+
+        // Convert to Models types
+        var header = new FileHeader(superpowerFile.Domain, superpowerFile.FileSourceInformation, superpowerFile.Encoding);
+
+        // Track current position state while converting lexemes
+        var currentPosition = new AbsolutePosition(0, 1, 1); // Start at line 0, column 0
+        var modelLexemes = superpowerFile.Lexemes.Select(superpowerLexeme => ConvertToModelLexeme(superpowerLexeme, nameDefinitions, ref currentPosition)).ToList();
+
+        return new Models.LexemeFile(header, modelLexemes);
+    }
 }
