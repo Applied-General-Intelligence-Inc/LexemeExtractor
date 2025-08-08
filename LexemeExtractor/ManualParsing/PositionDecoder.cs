@@ -8,9 +8,9 @@ namespace LexemeExtractor.ManualParsing;
 /// </summary>
 public class PositionDecoder
 {
-    private Position _lastPosition = new(1, 1);
-    private int _lastLine = 0;
-    private int _lastColumn = 1;
+    private Position _lastPosition = new(PositionConstants.InitialLineNumber, PositionConstants.InitialColumnNumber);
+    private int _lastLine = PositionConstants.InitialLineNumber;
+    private int _lastColumn = PositionConstants.InitialColumnNumber;
 
     /// <summary>
     /// Decodes a position string into a Position object according to the grammar specification
@@ -151,11 +151,11 @@ public class PositionDecoder
         if (positionStr.Length == 1)
         {
             // Simple punctuation pattern: just line increment
-            return new(newLine, 1);
+            return new(newLine, PositionConstants.InitialColumnNumber);
         }
 
         // Parse the remaining pattern after the punctuation character
-        var parser = new PositionPatternParser(positionStr[1..], true, 1);
+        var parser = new PositionPatternParser(positionStr[1..], true, PositionConstants.InitialColumnNumber);
         var startColumn = parser.ParseColumn();
 
         if (!parser.HasMore())
