@@ -121,7 +121,7 @@ static void ProcessStdin(string outputFormat)
         var domain = header.Domain;
 
         // Load name definitions using Superpower parser
-        var definitionFilePath = NameDefinitionParser.GetDefinitionFilePath(domain, "<stdin>");
+        var definitionFilePath = NameDefinitionParser.GetDefinitionFilePath(domain, ".");
         var nameDefinitions = NameDefinitionParser.ParseFile(definitionFilePath);
 
         // Use the formatter to output the results

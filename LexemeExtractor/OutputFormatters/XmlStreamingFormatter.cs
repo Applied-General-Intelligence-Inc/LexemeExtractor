@@ -44,6 +44,8 @@ public class XmlStreamingFormatter : StreamingFormatterBase
         Writer.WriteLine($"      <Type>{EscapeXml(lexeme.Type)}</Type>");
         Writer.WriteLine($"      <NumberString>{EscapeXml(lexeme.NumberString)}</NumberString>");
         Writer.WriteLine($"      <Number>{lexeme.Number}</Number>");
+        Writer.WriteLine($"      <Name>{EscapeXml(lexeme.NameDefinition?.Name ?? "")}</Name>");
+        Writer.WriteLine($"      <ValueType>{EscapeXml(lexeme.NameDefinition?.DataType ?? "None")}</ValueType>");
         WritePosition(lexeme.Position);
         WriteContent(lexeme.Content);
         Writer.WriteLine("    </Lexeme>");

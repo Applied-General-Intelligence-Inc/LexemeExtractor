@@ -367,10 +367,23 @@ public static class CompressedLexemeParser
     // Streaming parse method - parses header only from a TextReader
     public static FileHeader ParseHeader(TextReader reader)
     {
-        var domain = reader.ReadLine()?.Trim() ?? "";
+        var domain = StripBom(reader.ReadLine()?.Trim() ?? "");
         var fileSourceInfo = reader.ReadLine()?.Trim() ?? "";
         var encoding = reader.ReadLine()?.Trim() ?? "";
         return new FileHeader(domain, fileSourceInfo, encoding);
+    }
+
+    // Helper method to strip BOM character from the beginning of a string
+    private static string StripBom(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        // Remove BOM character (U+FEFF) if present at the beginning
+        if (input.Length > 0 && input[0] == '\uFEFF')
+            return input.Substring(1);
+
+        return input;
     }
 
     // Streaming parse method - yields lexemes one at a time from TextReader

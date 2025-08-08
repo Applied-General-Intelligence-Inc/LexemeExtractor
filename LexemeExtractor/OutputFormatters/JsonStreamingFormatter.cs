@@ -48,6 +48,8 @@ public class JsonStreamingFormatter : StreamingFormatterBase
         Writer.Write($"\"Type\": \"{EscapeJsonString(lexeme.Type)}\", ");
         Writer.Write($"\"NumberString\": \"{EscapeJsonString(lexeme.NumberString)}\", ");
         Writer.Write($"\"Number\": {lexeme.Number}, ");
+        Writer.Write($"\"Name\": \"{EscapeJsonString(lexeme.NameDefinition?.Name ?? "")}\", ");
+        Writer.Write($"\"ValueType\": \"{EscapeJsonString(lexeme.NameDefinition?.DataType ?? "None")}\", ");
         Writer.Write($"\"Position\": {SerializePositionJson(lexeme.Position)}, ");
         Writer.Write($"\"Content\": {SerializeContentJson(lexeme.Content)}");
         Writer.Write("}");

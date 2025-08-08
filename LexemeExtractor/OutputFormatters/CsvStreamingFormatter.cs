@@ -25,7 +25,7 @@ public class CsvStreamingFormatter : StreamingFormatterBase
             throw new ObjectDisposedException(nameof(CsvStreamingFormatter));
 
         // Write CSV header row
-        Writer.WriteLine("Type,NumberString,Number,Line,Column,EndLine,EndColumn,Length,IsRange,ContentType,Content");
+        Writer.WriteLine("Type,NumberString,Number,Name,ValueType,Line,Column,EndLine,EndColumn,Length,IsRange,ContentType,Content");
         
         // Write file metadata as a comment (if supported by the consumer)
         Writer.WriteLine($"# Domain: {EscapeCsvValue(header.Domain)}");
@@ -41,6 +41,8 @@ public class CsvStreamingFormatter : StreamingFormatterBase
         var type = EscapeCsvValue(lexeme.Type);
         var numberString = EscapeCsvValue(lexeme.NumberString);
         var number = lexeme.Number.ToString();
+        var name = EscapeCsvValue(lexeme.NameDefinition?.Name ?? "");
+        var valueType = EscapeCsvValue(lexeme.NameDefinition?.DataType ?? "None");
         var line = lexeme.Position.Line.ToString();
         var column = lexeme.Position.Column.ToString();
         var endLine = lexeme.Position.EndLine?.ToString() ?? "";
@@ -49,7 +51,7 @@ public class CsvStreamingFormatter : StreamingFormatterBase
         var isRange = lexeme.Position.IsRange.ToString().ToLowerInvariant();
         var (contentType, contentValue) = GetContentInfo(lexeme.Content);
 
-        Writer.WriteLine($"{type},{numberString},{number},{line},{column},{endLine},{endColumn},{length},{isRange},{contentType},{contentValue}");
+        Writer.WriteLine($"{type},{numberString},{number},{name},{valueType},{line},{column},{endLine},{endColumn},{length},{isRange},{contentType},{contentValue}");
     }
 
     /// <summary>
