@@ -4,27 +4,31 @@
 
 ```
 LexemeExtractor/
-├── Program.cs                          # Entry point with file globbing
-├── LexemeExtractor.csproj             # Project configuration
+├── Program.cs                          # Entry point with command-line interface
+├── LexemeExtractor.csproj             # Project configuration (.NET 9.0)
 ├── Models/
-│   ├── LexemeFile.cs                  # Represents complete .lexemes file
-│   ├── Lexeme.cs                      # Individual lexeme data
-│   ├── Position.cs                    # Line/column position
-│   ├── LexemeContent.cs               # Content variants (string, number, etc.)
-│   └── FileHeader.cs                  # Domain, filename, encoding info
-├── Parsing/
-│   ├── LexemeFileParser.cs            # Regex-based parser implementation
-│   ├── PositionDecoder.cs             # Decodes compressed positions
-│   ├── ContentDecoder.cs              # Decodes lexeme content
-│   └── EncodingHelper.cs              # Radix36, column encoding utilities
-├── Output/
-│   ├── IOutputFormatter.cs            # Output formatting interface
-│   ├── ConsoleFormatter.cs            # Human-readable console output
-│   ├── JsonFormatter.cs               # JSON output format
-│   └── CsvFormatter.cs                # CSV output format
-├── Exceptions/
-│   └── LexemeParseException.cs        # Custom parsing exceptions
-└── Grammar/                           # Reserved for future grammar files
+│   ├── LexemeFile.cs                  # Complete lexeme file representation
+│   ├── Lexeme.cs                      # Individual lexeme with name definitions
+│   ├── Position.cs                    # Line/column position information
+│   ├── LexemeContent.cs               # Content variants (string, number, boolean, empty)
+│   ├── FileHeader.cs                  # Domain, filename, encoding metadata
+│   ├── LexemeNameDefinition.cs        # Name definition from companion .txt files
+│   └── PositionConstants.cs           # Initial position values for parsing
+├── Superpower/
+│   ├── Parser.cs                      # Superpower-based parser with AST types
+│   └── NameDefinitionParser.cs        # Parser for lexeme name definition files
+├── OutputFormatters/
+│   ├── ILexemeFormatter.cs            # Streaming formatter interface
+│   ├── FormatterFactory.cs           # Factory for creating formatters
+│   ├── StreamingFormatterBase.cs     # Base class for streaming formatters
+│   ├── TextStreamingFormatter.cs     # Text output
+│   ├── JsonStreamingFormatter.cs     # JSON output
+│   ├── CsvStreamingFormatter.cs      # CSV output
+│   └── XmlStreamingFormatter.cs      # XML output
+└── Tests/
+    ├── StreamingFormatterTests.cs    # Unit tests for formatters
+    ├── StreamingIntegrationTest.cs   # End-to-end integration tests
+    └── TestFiles/                    # Test programs and sample data
 ```
 
 ## Architecture Overview
@@ -32,127 +36,117 @@ LexemeExtractor/
 ### Data Flow
 
 ```
-.lexemes file → Regex Parser → Position Decoder → Models → Formatter → Output
+.lexemes file → Header Parser → Name Resolution → Line-by-Line Parser → Streaming Formatter → Output
+                                      ↑
+                               Name Definition Files (.txt)
 ```
 
-1. **Input**: Compressed `.lexemes` files via glob patterns
-2. **Parsing**: Regex-based parser processes file structure and lexeme entries
-3. **Decoding**: Position decoder handles compressed position encodings
-4. **Modeling**: Parsed data converted to strongly-typed objects
-5. **Formatting**: Output formatters produce human-readable results
-6. **Output**: Console display or file export
+1. **Input**: Compressed `.lexemes` files via glob patterns or stdin
+2. **Header Parsing**: Parse file header (domain, filename, encoding) from first 3 lines
+3. **Name Resolution**: Load companion `.txt` files based on domain for lexeme name definitions
+4. **Streaming Parsing**: Parse lexemes one line at a time using Superpower combinators
+5. **Model Conversion**: Convert each lexeme to domain model with position calculation
+6. **Streaming Output**: Formatters process lexemes individually without building complete list
+7. **Output**: Multiple formats (text, JSON, CSV, XML) to console or files
 
 ### Core Components
 
 #### **Program.cs**
-- File globbing and argument processing
-- Orchestrates parsing and output for each file
-- Error handling and user feedback
+- Command-line argument parsing with `--format` option
+- File globbing and stdin input handling
+- Orchestrates parsing pipeline with error handling
+- Integrates name definition loading and formatter selection
 
-#### **LexemeFileParser.cs**
-- Regex-based parsing of lexeme file structure
-- Handles header parsing (domain, filename)
-- Processes lexeme entries with type, number, position, and content
-- Integrates with position decoder for compressed encodings
-- Uses permissive lexeme type matching (specification incomplete)
+#### **Superpower Parser (Parser.cs)**
+- Combinator-based parser using Superpower library
+- Creates strongly-typed AST with position and content parsing
+- Handles complex position encodings (relative, absolute, punctuation-based)
+- Supports all lexeme types (A-O) and content variants
 
-```csharp
-// Lexeme type pattern is permissive - complete specification unknown
-// Examples show: 0, 2a, 2v, k, o, 22, b
-private static readonly Regex LexemeLineRegex =
-    new(@"^(\S+)\s+([0-9a-z]+)\s+(\S+)(?:\s+(.*))?$", RegexOptions.Compiled);
-```
+#### **AST Types**
+- **File**: Domain, filename, encoding, and lexeme collection
+- **Lexeme**: Type, radix36 number, position, and content
+- **Position**: Abstract base with specialized implementations for different encodings
+- **Content**: String, integer, float, boolean, or empty content variants
 
-#### **PositionDecoder.cs**
-- Decodes compressed position encodings
-- Maintains state for relative position calculations
-- Handles special cases (`:`, `;`, `@`, `===A`, etc.)
+#### **Name Definition Parser**
+- Parses companion `.txt` files with format: `name = :number TYPE;`
+- Supports quoted and unquoted names, hex numbers, optional types
+- Provides lexeme name resolution
 
-#### **Output Formatters**
-- **ConsoleFormatter**: Human-readable text output
-- **JsonFormatter**: Structured JSON for tooling integration
-- **CsvFormatter**: Tabular data for analysis
+#### **Streaming Output Formatters**
+- **TextStreamingFormatter**: Text output
+- **JsonStreamingFormatter**: JSON output
+- **CsvStreamingFormatter**: CSV output
+- **XmlStreamingFormatter**: XML output
 
 ## Key Algorithms
 
-### Position Decoding Algorithm
+### Position Decoding System
+
+The Superpower parser handles complex position encodings through a hierarchical system:
 
 ```csharp
-public Position DecodePosition(string encoded, Position lastPosition, bool lineChanged)
+public abstract record Position
 {
-    return encoded switch
-    {
-        ":" => new Position(lastPosition.Line, lastPosition.Column, 1),
-        ";" => new Position(lastPosition.Line, lastPosition.Column, 2),
-        "@" => lastPosition,
-        "|" => lastPosition with { Column = lastPosition.Column + 1 },
-        "_" => lastPosition with { Column = lastPosition.Column + 2 },
-        "=" => lineChanged ? new Position(lastPosition.Line, 0) : lastPosition,
-        var punct when IsPunctuation(punct) => DecodeLineIncrement(punct, lastPosition),
-        var letter when IsLetter(letter) => DecodeColumnIncrement(letter, lastPosition),
-        _ => DecodeFullPosition(encoded)
-    };
+    public abstract AbsolutePosition GetLexemePosition(AbsolutePosition currentPosition);
 }
 ```
 
-### Content Decoding
+**Position Types:**
+- **SamePosition**: Width-based positioning (`:` = 1 char, `;` = 2 chars)
+- **SameLineEndColumn**: Column-relative positioning (`^`)
+- **SameLineStartColumn**: Start column with width (`<`, `>`)
+- **SameLineRange**: Column range on same line (`[`, `]`)
+- **NextLineRange**: Column range on next line
+- **FullRange**: Complete start/end position specification
+
+**Column Encoding:**
+- **AbsoluteColumn**: Direct column numbers
+- **RelativeColumn**: Radix52 offsets (a-z = 27-52, A-Z = 1-26)
+- **SameColumn**: Reuse previous column (`=`)
+
+### Content Parsing
 
 ```csharp
-public LexemeContent DecodeContent(string content)
+static readonly TextParser<Content> ContentParser =
+    StringContentParser.Select(s => (Content)new StringContent(s))
+    .Or(from sign in Character.In('+', '-')
+        from num in NumberParser
+        select (Content)new IntegerContent(sign == '-' ? -num : num, sign))
+    .Or(NumberParser.Select(num => (Content)new IntegerContent(num)))
+    .Or(FloatParser.Select(f => (Content)new FloatContent(f)))
+    .Or(Span.EqualTo("~t").Select(_ => (Content)new BooleanContent(true)))
+    .Or(Span.EqualTo("~f").Select(_ => (Content)new BooleanContent(false)))
+    .Or(Character.ExceptIn('\n', '\r').Many().Select(chars =>
+        chars.Length == 0 ? (Content)new EmptyContent() : (Content)new StringContent(new string(chars))));
+```
+
+### Name Definition Resolution
+
+```csharp
+public static string GetDefinitionFilePath(string domain, string inputFilePath)
 {
-    return content switch
+    var searchPaths = new[]
     {
-        "" => LexemeContent.Empty,
-        ['\"', .. var stringContent] => DecodeString(stringContent),
-        ['+', .. var digits] => new NumberContent(ParseNumber(digits)),
-        ['-', .. var digits] => new NumberContent(-ParseNumber(digits)),
-        "~t" => new BooleanContent(true),
-        "~f" => new BooleanContent(false),
-        _ => DecodeNumericContent(content)
+        Path.GetDirectoryName(inputFilePath),
+        Environment.GetEnvironmentVariable("LEXEME_NAMES_FILES"),
+        Directory.GetCurrentDirectory(),
+        Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
     };
-}
-```
-
-## Output Formats
-
-### Console Output Example
-```
-File: /temp/example.java (Java~~Java1_5)
-
-Lexeme #1: Comment (Type: 0)
-  Position: Line 2, Column 1-44
-  Content: "/* Copyright 1997-1999 by Semantic Designs, Inc */"
-
-Lexeme #2: Unknown (Type: 2a)
-  Position: Line 3, Column 1-7
-  Content: "package"
-
-Lexeme #3: Unknown (Type: 2v)
-  Position: Line 3, Column 9-13
-  Content: "javax"
-```
-
-### JSON Output Example
-```json
-{
-  "file": "/temp/example.java",
-  "domain": "Java~~Java1_5",
-  "lexemes": [
-    {
-      "type": "0",
-      "number": 0,
-      "position": { "startLine": 2, "startColumn": 1, "endLine": 2, "endColumn": 44 },
-      "content": { "type": "string", "value": "/* Copyright 1997-1999 */" }
-    }
-  ]
+    
+    return searchPaths
+        .Where(path => !string.IsNullOrEmpty(path))
+        .Select(path => Path.Combine(path, $"{domain}.txt"))
+        .FirstOrDefault(File.Exists) ?? $"{domain}.txt";
 }
 ```
 
 ## Dependencies
 
-- **System.Text.Json**: JSON output formatting (built-in)
-- **System.Text.RegularExpressions**: Regex parsing (built-in)
-- **.NET 9.0**: Target framework with C# 13 features
+- **Superpower 3.1.0**: Combinator parser library
+- **.NET 9.0**: Target framework
+- **System.Text.Json**: Built-in JSON serialization
 
 ## Build Configuration
 
@@ -160,26 +154,47 @@ Lexeme #3: Unknown (Type: 2v)
 <PropertyGroup>
   <OutputType>Exe</OutputType>
   <TargetFramework>net9.0</TargetFramework>
-  <PublishAot>true</PublishAot>
-  <SelfContained>true</SelfContained>
   <LangVersion>latestmajor</LangVersion>
   <ImplicitUsings>enable</ImplicitUsings>
   <Nullable>enable</Nullable>
+  <SelfContained>true</SelfContained>
+  <PublishAot>true</PublishAot>
+  <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
 </PropertyGroup>
 ```
 
 ## Usage Examples
 
 ```bash
-# Process single file
+# Process single file with default text format
 LexemeExtractor example.lexemes
 
-# Process multiple files with glob
-LexemeExtractor "*.lexemes"
+# Process multiple files with JSON output
+LexemeExtractor "*.lexemes" --format json
 
-# Output to JSON
-LexemeExtractor --format json "*.lexemes"
+# Process from stdin with CSV format
+cat file.lexemes | LexemeExtractor --format csv
 
-# Process files in subdirectory
-LexemeExtractor "data/*.lexemes"
+# Process with XML output
+LexemeExtractor "data/*.lexemes" --format xml
 ```
+
+## Command-Line Interface
+
+```
+Usage: LexemeExtractor <glob-pattern> [--format <format>]
+       LexemeExtractor [--format <format>] < input.lexemes
+
+Formats: text (default), json, csv, xml
+
+Examples:
+  LexemeExtractor "*.lexemes" --format json
+  cat file.lexemes | LexemeExtractor --format csv
+```
+
+## Testing Architecture
+
+- **StreamingFormatterTests**: Unit tests for each output formatter
+- **StreamingIntegrationTest**: End-to-end parsing and formatting tests
+- **TestFiles/**: Sample programs demonstrating formatter usage
+- **AOT Compatibility Tests**: Native compilation compatibility

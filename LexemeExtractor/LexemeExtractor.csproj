@@ -16,8 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="Tests/TestFiles/**/*.cs" />
-      <None Include="Tests/TestFiles/**/*" />
+      <Compile Remove="Tests/**/*.cs" />
+      <None Include="Tests/**/*" />
     </ItemGroup>
 
 

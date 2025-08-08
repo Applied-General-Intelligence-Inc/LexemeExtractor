@@ -70,28 +70,30 @@ static void ProcessFile(string inputFilePath, string outputFormat)
 {
     try
     {
-        var fileContent = System.IO.File.ReadAllText(inputFilePath);
+        using var fileReader = new StreamReader(inputFilePath);
 
-        // Parse just the header to get the domain (without parsing all lexemes)
-        var lines = fileContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var domain = lines.Length > 0 ? lines[0].Trim() : "";
+        // Parse header and get domain for name definitions
+        var header = CompressedLexemeParser.ParseHeader(fileReader);
+        var domain = header.Domain;
 
         // Load name definitions using Superpower parser
         var definitionFilePath = NameDefinitionParser.GetDefinitionFilePath(domain, inputFilePath);
         var nameDefinitions = NameDefinitionParser.ParseFile(definitionFilePath);
 
-        // Parse the file with name definitions
-        var parsedFile = Parse(fileContent, nameDefinitions);
-
         // Use the formatter to output the results
         using var formatter = FormatterFactory.CreateFormatter(outputFormat, Console.Out);
 
-        formatter.WriteHeader(parsedFile.Header);
-        foreach (var lexeme in parsedFile.Lexemes)
+        // Write header
+        formatter.WriteHeader(header);
+
+        // Stream lexemes one at a time directly from file
+        var lexemeCount = 0;
+        foreach (var lexeme in CompressedLexemeParser.ParseLexemes(fileReader, nameDefinitions))
         {
             formatter.WriteLexeme(lexeme);
+            lexemeCount++;
         }
-        formatter.WriteFooter(parsedFile.Lexemes.Count);
+        formatter.WriteFooter(lexemeCount);
     }
     catch (Exception ex)
     {
@@ -107,28 +109,28 @@ static void ProcessStdin(string outputFormat)
 {
     try
     {
-        var input = Console.In.ReadToEnd();
-
-        // Parse just the header to get the domain (without parsing all lexemes)
-        var lines = input.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        var domain = lines.Length > 0 ? lines[0].Trim() : "";
+        // Parse header and get domain for name definitions
+        var header = CompressedLexemeParser.ParseHeader(Console.In);
+        var domain = header.Domain;
 
         // Load name definitions using Superpower parser
         var definitionFilePath = NameDefinitionParser.GetDefinitionFilePath(domain, "<stdin>");
         var nameDefinitions = NameDefinitionParser.ParseFile(definitionFilePath);
 
-        // Parse the input with name definitions
-        var parsedFile = Parse(input, nameDefinitions);
-
         // Use the formatter to output the results
         using var formatter = FormatterFactory.CreateFormatter(outputFormat, Console.Out);
 
-        formatter.WriteHeader(parsedFile.Header);
-        foreach (var lexeme in parsedFile.Lexemes)
+        // Write header
+        formatter.WriteHeader(header);
+
+        // Stream lexemes one at a time directly from stdin
+        var lexemeCount = 0;
+        foreach (var lexeme in CompressedLexemeParser.ParseLexemes(Console.In, nameDefinitions))
         {
             formatter.WriteLexeme(lexeme);
+            lexemeCount++;
         }
-        formatter.WriteFooter(parsedFile.Lexemes.Count);
+        formatter.WriteFooter(lexemeCount);
     }
     catch (Exception ex)
     {

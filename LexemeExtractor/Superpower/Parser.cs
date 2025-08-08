@@ -357,9 +357,6 @@ public static class CompressedLexemeParser
         _ => LexemeContent.Empty
     };
 
-    // Main parse method - without name definitions (for backward compatibility)
-    public static Models.LexemeFile Parse(string input) => Parse(input, null);
-
     // Main parse method - with name definitions
     public static Models.LexemeFile Parse(string input, Dictionary<string, LexemeNameDefinition>? nameDefinitions)
     {
@@ -373,5 +370,33 @@ public static class CompressedLexemeParser
         var modelLexemes = superpowerFile.Lexemes.Select(superpowerLexeme => ConvertToModelLexeme(superpowerLexeme, nameDefinitions, ref currentPosition)).ToList();
 
         return new Models.LexemeFile(header, modelLexemes);
+    }
+
+    // Streaming parse method - parses header only from a TextReader
+    public static FileHeader ParseHeader(TextReader reader)
+    {
+        var domain = reader.ReadLine()?.Trim() ?? "";
+        var fileSourceInfo = reader.ReadLine()?.Trim() ?? "";
+        var encoding = reader.ReadLine()?.Trim() ?? "";
+        return new FileHeader(domain, fileSourceInfo, encoding);
+    }
+
+    // Streaming parse method - yields lexemes one at a time from TextReader
+    public static IEnumerable<Models.Lexeme> ParseLexemes(TextReader reader, Dictionary<string, LexemeNameDefinition>? nameDefinitions)
+    {
+        // Track current position state while converting lexemes
+        var currentPosition = new AbsolutePosition(Models.PositionConstants.InitialStartLine, Models.PositionConstants.InitialStartColumn, Models.PositionConstants.InitialEndLine, Models.PositionConstants.InitialEndColumn);
+
+        string? line;
+        while ((line = reader.ReadLine()) != null)
+        {
+            line = line.Trim();
+            if (string.IsNullOrEmpty(line))
+                continue;
+
+            // Parse individual lexeme line
+            var superpowerLexeme = LexemeParser.Parse(line + Environment.NewLine);
+            yield return ConvertToModelLexeme(superpowerLexeme, nameDefinitions, ref currentPosition);
+        }
     }
 }
