@@ -1,6 +1,5 @@
 using Superpower;
 using Superpower.Parsers;
-using static Superpower.Parse;
 using LexemeExtractor.Models;
 
 namespace LexemeExtractor.Superpower;
@@ -48,22 +47,7 @@ public static class NameDefinitionParser
         from _____ in Character.EqualTo(';').OptionalOrDefault()
         from ______ in Character.WhiteSpace.Many()
         select new LexemeNameDefinition(name, number, dataType);
-
-    // Comment and empty line parsers
-    private static readonly TextParser<LexemeNameDefinition?> CommentLineParser =
-        from _ in Character.EqualTo('#')
-        from __ in Character.ExceptIn('\n', '\r').Many()
-        select (LexemeNameDefinition?)null;
-
-    private static readonly TextParser<LexemeNameDefinition?> EmptyLineParser =
-        Character.WhiteSpace.Many().Select(LexemeNameDefinition? (_) => null);
-
-    // Line parser that handles all line types
-    private static readonly TextParser<LexemeNameDefinition?> LineParser =
-        CommentLineParser
-        .Or(EmptyLineParser)
-        .Or(DefinitionLineParser.Select(LexemeNameDefinition? (def) => def));
-
+    
     /// <summary>
     /// Parses a lexeme name definition file and returns a dictionary by number (base36)
     /// </summary>

@@ -41,8 +41,15 @@ public class TextStreamingFormatter : StreamingFormatterBase
         var nameDisplay = FormatNameWithType(lexeme);
         var contentDisplay = FormatContent(lexeme.Content);
         var contentPart = contentDisplay == "(empty)" ? "" : $" = {contentDisplay}";
+        var typePart = string.IsNullOrWhiteSpace(lexeme.Type) ? "" : $" [{lexeme.Type}]";
 
-        Writer.WriteLine($"{nameDisplay} #{lexeme.NumberString}({lexeme.Number}) [{lexeme.Type}] @ {lexeme.Position}{contentPart}");
+        // Debug: Check what the type actually is
+        if (lexeme.NumberString == "6k")
+        {
+            Console.Error.WriteLine($"DEBUG: Type='{lexeme.Type}', Length={lexeme.Type?.Length}, IsNullOrWhiteSpace={string.IsNullOrWhiteSpace(lexeme.Type)}");
+        }
+
+        Writer.WriteLine($"{nameDisplay} #{lexeme.NumberString}({lexeme.Number}){typePart} @ {lexeme.Position}{contentPart}");
     }
 
     /// <summary>

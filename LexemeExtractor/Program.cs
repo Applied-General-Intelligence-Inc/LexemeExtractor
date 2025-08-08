@@ -80,8 +80,13 @@ static void ProcessFile(string inputFilePath, string outputFormat)
         var definitionFilePath = NameDefinitionParser.GetDefinitionFilePath(domain, inputFilePath);
         var nameDefinitions = NameDefinitionParser.ParseFile(definitionFilePath);
 
-        // Use the formatter to output the results
-        using var formatter = FormatterFactory.CreateFormatter(outputFormat, Console.Out);
+        // Create output file path by appending extension
+        var outputExtension = FormatterFactory.GetFileExtension(outputFormat);
+        var outputFilePath = inputFilePath + outputExtension;
+
+        // Use the formatter to output the results to file
+        using var outputWriter = new StreamWriter(outputFilePath);
+        using var formatter = FormatterFactory.CreateFormatter(outputFormat, outputWriter);
 
         // Write header
         formatter.WriteHeader(header);
@@ -94,6 +99,8 @@ static void ProcessFile(string inputFilePath, string outputFormat)
             lexemeCount++;
         }
         formatter.WriteFooter(lexemeCount);
+
+        Console.WriteLine($"Output written to: {outputFilePath}");
     }
     catch (Exception ex)
     {
@@ -146,11 +153,11 @@ static void ProcessStdin(string outputFormat)
 static (string? globPattern, string outputFormat, bool useStdin) ParseArguments(string[] args)
 {
     string? globPattern = null;
-    string outputFormat = "text"; // Default format
-    bool useStdin = false;
+    var outputFormat = "text"; // Default format
+    var useStdin = false;
 
     // Parse arguments
-    for (int i = 0; i < args.Length; i++)
+    for (var i = 0; i < args.Length; i++)
     {
         if (args[i] == "--format" && i + 1 < args.Length)
         {
@@ -178,11 +185,10 @@ static (string? globPattern, string outputFormat, bool useStdin) ParseArguments(
 
     // Validate format
     var validFormats = new[] { "text", "json", "csv", "xml" };
-    if (!validFormats.Contains(outputFormat))
-    {
-        Console.Error.WriteLine($"Invalid format '{outputFormat}'. Valid formats: {string.Join(", ", validFormats)}");
-        outputFormat = "text";
-    }
+    if (validFormats.Contains(outputFormat)) return (globPattern, outputFormat, useStdin);
+    
+    Console.Error.WriteLine($"Invalid format '{outputFormat}'. Valid formats: {string.Join(", ", validFormats)}");
+    outputFormat = "text";
 
     return (globPattern, outputFormat, useStdin);
 }

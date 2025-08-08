@@ -68,7 +68,7 @@ public class CsvStreamingFormatter : StreamingFormatterBase
     /// </summary>
     private static string EscapeCsvValue(string value)
     {
-        if (string.IsNullOrEmpty(value))
+        if (string.IsNullOrWhiteSpace(value) || value.Trim().Length == 0)
             return "";
 
         // If the value contains comma, quote, or newline, wrap in quotes and escape quotes
