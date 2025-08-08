@@ -1,12 +1,13 @@
 # LexemeExtractor
 
-A .NET 9.0 console application that processes files matching glob patterns with support for Linux path conventions.
+A .NET 9.0 console application that decompresses and processes lexeme files from Semantic Designs. The application processes files matching glob patterns with support for Linux path conventions.
 
 ## Features
 
-- **Glob Pattern Matching**: Process multiple files using standard glob patterns (e.g., `*.txt`, `*.cs`)
+- **Lexeme File Decompression**: Decompresses and decodes lexeme files from Semantic Designs
+- **Glob Pattern Matching**: Process multiple files using standard glob patterns (e.g., `*.lexemes`, `*.txt`)
 - **Linux Path Support**: Support for `~/` home directory expansion on Linux
-- **C# 13 Language Features**: Uses list patterns, switch expressions, and type inference
+- **Name Definition Support**: Automatically loads human-readable lexeme names from companion definition files
 - **Cross-Platform**: Built for .NET 9.0 with Linux x64 runtime
 - **AOT Compilation**: Configured for Ahead-of-Time compilation
 
@@ -16,9 +17,28 @@ A .NET 9.0 console application that processes files matching glob patterns with 
 LexemeExtractor <glob-pattern>
 ```
 
+### Name Definition Files
+
+A name definition file for the lexer domain is required. This file must be named with the same name that is provided at the top of each lexeme file (the domain/dialect name). The application searches for name definition files in the following order:
+
+1. Same directory as the input file
+2. Directory specified by `LEXEME_NAMES_FILES` environment variable
+3. Program's current directory
+4. Executable's directory
+
+The name definition file should contain lexeme definitions in the format:
+```
+name = :number TYPE;
+```
+
+Where names may have quotes, numbers are in base16 with colon prefix, and types are optional.
+
 ### Examples
 
 ```bash
+# Process all lexeme files in current directory
+LexemeExtractor "*.lexemes"
+
 # Process all text files in current directory
 LexemeExtractor "*.txt"
 
@@ -56,21 +76,13 @@ dotnet publish -c Release
 
 ```bash
 # Run with dotnet
-dotnet run --project LexemeExtractor -- "*.txt"
+dotnet run --project LexemeExtractor -- "*.lexemes"
 
 # Run compiled binary (after publish)
-./LexemeExtractor/bin/Release/net9.0/linux-x64/publish/LexemeExtractor "*.txt"
+./LexemeExtractor/bin/Release/net9.0/linux-x64/publish/LexemeExtractor "*.lexemes"
 ```
 
 ## Technical Details
-
-### C# Language Features Used
-
-- **List Pattern Matching**: For home directory expansion (`['~', '/', .. var rest]`)
-- **Switch Expressions**: For path processing and directory resolution
-- **Type Inference**: Use of `var` for type inference
-- **Expression-bodied Methods**: Concise method definitions
-- **Top-level Programs**: Simplified program structure
 
 ### Project Configuration
 
@@ -94,7 +106,8 @@ The application follows a simple, functional approach:
 
 ## Documentation
 
-- **[LexemeExtractor.md](LexemeExtractor.md)**: Detailed specification of the lexeme file format and encoding
+- **[LexemeFileFormat.md](LexemeFileFormat.md)**: Detailed specification of the lexeme file format and encoding
+- **[LexemeNameDefinitions.md](LexemeNameDefinitions.md)**: Documentation for lexeme name definition files
 
 ## Contributing
 
