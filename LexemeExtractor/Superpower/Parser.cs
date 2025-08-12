@@ -180,7 +180,8 @@ public record BooleanContent(bool Value) : Content;
 public static class CompressedLexemeParser
 {
     // Basic parsers
-    private static readonly TextParser<char> TypeParser = Character.In("ABCDEFGHIJKLMNO".ToCharArray());
+    private static readonly TextParser<char> TypeParser = Span.Regex(@"[A-O]")
+        .Select(span => span.ToStringValue()[0]);
 
     private static readonly TextParser<string> Radix36NumberParser =
         Character.LetterOrDigit.Or(Character.Lower)
@@ -272,20 +273,14 @@ public static class CompressedLexemeParser
         select new string(content);
 
     private static readonly TextParser<Content> ContentParser =
-        // String content (starts with quote)
-        StringContentParser.Select(s => (Content)new StringContent(s))
-        // Signed numbers
+        StringContentParser.Select(Content (s) => new StringContent(s))
         .Or(from sign in Character.In('+', '-')
             from num in NumberParser
             select (Content)new IntegerContent(sign == '-' ? -num : num, sign))
-        // Unsigned numbers
-        .Or(NumberParser.Select(num => (Content)new IntegerContent(num)))
-        // Float numbers
-        .Or(FloatParser.Select(f => (Content)new FloatContent(f)))
-        // Boolean values
-        .Or(Span.EqualTo("~t").Select(_ => (Content)new BooleanContent(true)))
-        .Or(Span.EqualTo("~f").Select(_ => (Content)new BooleanContent(false)))
-        // Everything else as string content or empty
+        .Or(NumberParser.Select(Content (num) => new IntegerContent(num)))
+        .Or(FloatParser.Select(Content (f) => new FloatContent(f)))
+        .Or(Span.EqualTo("~t").Select(Content (_) => new BooleanContent(true)))
+        .Or(Span.EqualTo("~f").Select(Content (_) => new BooleanContent(false)))
         .Or(Character.ExceptIn('\n', '\r').Many().Select(chars =>
             chars.Length == 0 ? new EmptyContent() : (Content)new StringContent(new string(chars))));
 
